@@ -21,23 +21,23 @@ This project is a REST API built with Go (Golang) and MongoDB. It provides endpo
 ## API Endpoints
 
 ### Users
-- POST /users: Create a new user
-- GET /users: Fetch all users
-- GET /users/{id}: Fetch a specific user by ID
-- PUT /users/{id}: Update a specific user by ID
-- DELETE /users/{id}: Delete a specific user by ID
-- POST /login: Authenticate a user
+- POST `/users`: Create a new user
+- GET `/users`: Fetch all users
+- GET `/users/{id}`: Fetch a specific user by ID
+- PUT `/users/{id}`: Update a specific user by ID
+- DELETE `/users/{id}`: Delete a specific user by ID
+- POST `/login`: Authenticate a user
 
 ### Services
-- POST /services: Create a new service
-- GET /services: Fetch all services
-- GET /services/employee/{employee_id}: Fetch services by Employee ID
-- GET /services/employer/{employer_id}: Fetch services by Employer ID
-PUT /services/{id}: Update a specific service by ID
-- DELETE /services/{id}: Delete a specific service by ID
+- POST `/services`: Create a new service
+- GET `/services`: Fetch all services
+- GET `/services/employee/{employee_id}`: Fetch services by Employee ID
+- GET `/services/employer/{employer_id}`: Fetch services by Employer ID
+PUT `/services/{id}`: Update a specific service by ID
+- DELETE `/services/{id}`: Delete a specific service by ID
 
 ## How to run 
-1. git clone https://github.com/DarkGunPT/PSfrontend.git
-2. cd ../PSbackend-directory
-3. go mod tidy
-4. go run main.go
+1. `git clone https://github.com/DarkGunPT/PSfrontend.git`
+2. `cd ../PSbackend-directory`
+3. `go mod tidy`
+4. `go run main.go`
