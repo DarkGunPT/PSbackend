@@ -16,7 +16,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// setupRouter configura o roteador para testes
 func setupRouter() *http.ServeMux {
 	router := http.NewServeMux()
 	ctx, _ := context.WithTimeout(context.Background(), time.Minute)
@@ -27,20 +26,20 @@ func setupRouter() *http.ServeMux {
 
 	router.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
-			CreateUser(context.Background(), client, "PSproject", "Users", w, r)
+			CreateUser(context.Background(), client, "PSprojectTest", "Users", w, r)
 		} else if r.Method == http.MethodGet {
-			GetUsers(context.Background(), client, "PSproject", "Users", w, r)
+			GetUsers(context.Background(), client, "PSprojectTest", "Users", w, r)
 		} else if r.Method == http.MethodDelete {
-			DeleteUser(context.Background(), client, "PSproject", "Users", w, r)
+			DeleteUser(context.Background(), client, "PSprojectTest", "Users", w, r)
 		}
 	})
 
 	router.HandleFunc("/api/users/login", func(w http.ResponseWriter, r *http.Request) {
-		Login(context.Background(), client, "PSproject", "Users", w, r)
+		Login(context.Background(), client, "PSprojectTest", "Users", w, r)
 	})
 
 	router.HandleFunc("/api/users/phone", func(w http.ResponseWriter, r *http.Request) {
-		GetUser(context.Background(), client, "PSproject", "Users", w, r)
+		GetUser(context.Background(), client, "PSprojectTest", "Users", w, r)
 	})
 
 	return router
@@ -98,7 +97,7 @@ func TestLoginUser(t *testing.T) {
 	}
 	loginJSON, _ := json.Marshal(loginData)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/login", bytes.NewBuffer(loginJSON))
+	req := httptest.NewRequest(http.MethodPost, "/api/users/login", bytes.NewBuffer(loginJSON))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
