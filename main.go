@@ -15,7 +15,7 @@ import (
 
 func main() {
 	// Create context with timeout for connecting to MongoDB
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
 	// Load environment variables from .env file
@@ -45,6 +45,9 @@ func main() {
 
 	// Register user-related routes
 	routes.UserRoutes(ctx, client, os.Getenv("DB_NAME"), os.Getenv("USER_COLLECTION"), router)
+
+	// Register service-related routes
+	routes.ServiceRoutes(ctx, client, os.Getenv("DB_NAME"), os.Getenv("SERVICE_COLLECTION"), router)
 
 	// Start the HTTP server on port 8080
 	err = http.ListenAndServe(":8080", router)
