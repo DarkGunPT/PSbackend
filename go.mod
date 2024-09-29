@@ -4,6 +4,7 @@ go 1.22.1
 
 require (
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/gorilla/mux v1.8.1
 	github.com/joho/godotenv v1.5.1
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect

@@ -2,17 +2,20 @@ package main
 
 import (
 	"PSbackend/config"
+	"PSbackend/routes"
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )
 
 func main() {
 	// Create context with timeout for connecting to MongoDB
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	// Load environment variables from .env file
@@ -35,5 +38,20 @@ func main() {
 		return
 	}
 
-	log.Println("Connected and Tested MongoDB")
+	log.Println("Connected and Tested MongoDB with success")
+
+	// Initialize Gorilla Mux router
+	router := mux.NewRouter()
+
+	// Register user-related routes
+	routes.UserRoutes(ctx, client, os.Getenv("DB_NAME"), os.Getenv("USER_COLLECTION"), router)
+
+	// Start the HTTP server on port 8080
+	err = http.ListenAndServe(":8080", router)
+	if err != nil {
+		log.Fatal("Error starting the http server:", err)
+		return
+	}
+
+	log.Println("Started the http server at port :8080 with success")
 }
