@@ -88,6 +88,25 @@ func TestGetUsers(t *testing.T) {
 	}
 }
 
+func TestGetUser(t *testing.T) {
+	router := setupRouter()
+
+	body := map[string]interface{}{
+		"phone": 1234567890,
+	}
+	json, _ := json.Marshal(body)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/users/phone", bytes.NewBuffer(json))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status code 200, got %v. Response: %s", w.Code, w.Body.String())
+	}
+}
+
 func TestLoginUser(t *testing.T) {
 	router := setupRouter()
 
