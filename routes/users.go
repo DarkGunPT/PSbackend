@@ -39,4 +39,9 @@ func UserRoutes(ctx context.Context, client *mongo.Client, dbName, userCollectio
 	router.HandleFunc("/api/users/login", func(w http.ResponseWriter, r *http.Request) {
 		api.Login(ctx, client, dbName, userCollection, w, r)
 	}).Methods("POST")
+
+	// Define route email verification
+	router.HandleFunc("/api/users/verification", func(w http.ResponseWriter, r *http.Request) {
+		api.VerificateEmail(ctx, w, r)
+	}).Methods("POST")
 }
