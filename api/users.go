@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"os"
@@ -29,7 +30,7 @@ func VerificateEmail(ctx context.Context, w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	code := rand.Intn(899999) + 100000
+	code := rand.Intn(8999) + 1000
 
 	from := mail.NewEmail("FixFinder", os.Getenv("FIXFINDER_EMAIL"))
 	to := mail.NewEmail("Nuno Honório", requestBody.Email)
@@ -232,16 +233,22 @@ func LoginAdmin(ctx context.Context, client *mongo.Client, dbName, userCollectio
 		return
 	}
 
+	if requestBody.Role == "ADMIN" {
+		http.Error(w, "User isn't admin", http.StatusUnauthorized)
+		return
+	}
+
 	collection := client.Database(dbName).Collection(userCollection)
 
 	var user models.User
 	err = collection.FindOne(ctx, bson.M{"email": requestBody.Email}).Decode(&user)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
-	if user.Password != requestBody.Password && user.Role == "ADMIN" {
+	if user.Password != requestBody.Password {
 		http.Error(w, "Incorrect password", http.StatusUnauthorized)
 		return
 	}
