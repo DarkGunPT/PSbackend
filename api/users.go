@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math/rand"
 	"net/http"
 	"os"
@@ -234,7 +233,6 @@ func LoginAdmin(ctx context.Context, client *mongo.Client, dbName, userCollectio
 	}
 
 	if requestBody.Role == "ADMIN" {
-		log.Println(err)
 		http.Error(w, "User isn't admin", http.StatusUnauthorized)
 		return
 	}
@@ -244,8 +242,7 @@ func LoginAdmin(ctx context.Context, client *mongo.Client, dbName, userCollectio
 	var user models.User
 	err = collection.FindOne(ctx, bson.M{"email": requestBody.Email}).Decode(&user)
 	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 

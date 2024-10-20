@@ -52,6 +52,6 @@ func UserRoutes(ctx context.Context, client *mongo.Client, dbName, userCollectio
 
 	// Define route for admin login of bo
 	router.HandleFunc("/api/bo/users/login", func(w http.ResponseWriter, r *http.Request) {
-		api.Login(ctx, client, dbName, userCollection, w, r)
+		api.LoginAdmin(ctx, client, dbName, userCollection, w, r)
 	}).Methods("POST")
 }
