@@ -4,12 +4,60 @@ import (
 	"PSbackend/models"
 	"context"
 	"encoding/json"
+	"fmt"
+	"math/rand"
 	"net/http"
+	"os"
 
+	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+// VerificateEmail is responsible for sending an email with a verification code to the user's email address
+func VerificateEmail(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		Email string `json:"email"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	code := rand.Intn(899999) + 100000
+
+	from := mail.NewEmail("FixFinder", os.Getenv("FIXFINDER_EMAIL"))
+	to := mail.NewEmail("Nuno Honório", requestBody.Email)
+	subject := fmt.Sprintf("Email Validation of FixFinder Code: %d", code)
+	plainTextContent := "Making it easier to find technicians for certain domestic services​"
+	htmlContent := "<strong>Making it easier to find technicians for certain domestic services​</strong>"
+	message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
+	client := sendgrid.NewSendClient(os.Getenv("SENDGRID_APIKEY"))
+	response, err := client.Send(message)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if response.StatusCode >= 400 {
+		http.Error(w, fmt.Sprintf("Failed to send email, status code: %d", response.StatusCode), http.StatusInternalServerError)
+		return
+	}
+
+	// Send the generated code back to the frontend in the response
+	jsonResponse := map[string]interface{}{
+		"message": "Verification email sent successfully",
+		"code":    code,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(jsonResponse)
+}
 
 // CreateUser handles POST requests to create a new user
 func CreateUser(ctx context.Context, client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
