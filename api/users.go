@@ -219,6 +219,7 @@ func Login(ctx context.Context, client *mongo.Client, dbName, userCollection str
 }
 
 func LoginAdmin(ctx context.Context, client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+	var isAdmin bool
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
 		Email    string `json:"email"`
@@ -240,7 +241,13 @@ func LoginAdmin(ctx context.Context, client *mongo.Client, dbName, userCollectio
 		return
 	}
 
-	if user.Role == "ADMIN" {
+	for _, role := range user.Role {
+		if role.Name == "ADMIN" {
+			isAdmin = true
+		}
+	}
+
+	if !isAdmin {
 		http.Error(w, "User isn't admin", http.StatusUnauthorized)
 		return
 	}

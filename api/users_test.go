@@ -49,18 +49,25 @@ func TestCreateUser(t *testing.T) {
 	router := setupRouter()
 
 	user := models.User{
-		ID:           primitive.NewObjectID(),
-		Phone:        1234567890,
-		Name:         "John Doe",
-		Password:     "password123",
-		Role:         "freelancer",
-		Locality:     "Downtown",
-		Profession:   "Developer",
-		PricePerHour: 50.0,
-		Rating:       4.5,
-		Fee:          10.0,
-		JobsDone:     5,
-		Block:        false,
+		ID:       primitive.NewObjectID(),
+		Name:     "John Doe",
+		Password: "password123",
+		NIF:      210422113,
+		Phone:    1234567890,
+		Email:    "nuno.honorio2000@gmail.com",
+		Role: []models.Role{
+			{
+				Name: "Developer",
+			},
+		},
+		ServiceTypes: []models.ServiceType{
+			{
+				Name: "Developer",
+			},
+		},
+		Locality:      "Coimbra",
+		Rating:        4.5,
+		BlockServices: false,
 	}
 	userJSON, _ := json.Marshal(user)
 
