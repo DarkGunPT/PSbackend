@@ -27,3 +27,5 @@ func CreateService(ctx context.Context, client *mongo.Client, dbName, serviceCol
 	}
 	json.NewEncoder(w).Encode(result)
 }
+
+// Fetch Services
