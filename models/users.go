@@ -20,7 +20,7 @@ type User struct {
 	BlockServices bool               `json:"block_services,omitempty" bson:"block_services,omitempty"`
 	IsActive      bool               `json:"is_active,omitempty" bson:"is_active,omitempty"`
 	CreatedAt     time.Time          `json:"created_at,omitempty" bson:"created_at,omitempty"`
-	RecoveryCode  int64              `json:"recovery_code,omitempty" bson:"recovery_code,omitempty"`
+	RecoveryCode  int                `json:"recovery_code,omitempty" bson:"recovery_code,omitempty"`
 }
 
 type Role struct {
