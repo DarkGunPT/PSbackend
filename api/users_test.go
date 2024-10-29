@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -19,7 +20,7 @@ import (
 func setupRouter() *http.ServeMux {
 	router := http.NewServeMux()
 	ctx, _ := context.WithTimeout(context.Background(), time.Minute)
-	client, err := config.ConnectDB(ctx, "mongodb://localhost:27017")
+	client, err := config.ConnectDB(ctx, os.Getenv("MONGO_URI"))
 	if err != nil {
 		log.Fatal("Error connecting to mongodb:", err)
 	}

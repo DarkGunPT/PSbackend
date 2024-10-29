@@ -14,10 +14,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // VerificateEmail is responsible for sending an email with a verification code to the user's email address
-func VerificateEmail(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func VerificateEmail(ctx context.Context, w http.ResponseWriter, r *http.Request, mongo *mongo.Client, dbName, userCollection string) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
 		Email string `json:"email"`
@@ -30,6 +31,19 @@ func VerificateEmail(ctx context.Context, w http.ResponseWriter, r *http.Request
 	}
 
 	code := rand.Intn(8999) + 1000
+
+	collection := mongo.Database(dbName).Collection(userCollection)
+
+	result, err := collection.UpdateOne(ctx, bson.M{"email": requestBody.Email}, bson.M{"$set": bson.M{"recovery_code": code}}, options.Update().SetUpsert(true))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if result.ModifiedCount == 0 {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
 
 	from := mail.NewEmail("FixFinder", os.Getenv("FIXFINDER_EMAIL"))
 	to := mail.NewEmail("Nuno Honório", requestBody.Email)
@@ -107,7 +121,7 @@ func GetUsers(ctx context.Context, client *mongo.Client, dbName, userCollection 
 func GetUser(ctx context.Context, client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
-		Phone int64 `json:"phone"`
+		NIF int64 `json:"nif"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
@@ -119,7 +133,7 @@ func GetUser(ctx context.Context, client *mongo.Client, dbName, userCollection s
 	var user models.User
 	collection := client.Database(dbName).Collection(userCollection)
 
-	err = collection.FindOne(ctx, bson.M{"phone": requestBody.Phone}).Decode(&user)
+	err = collection.FindOne(ctx, bson.M{"nif": requestBody.NIF}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			http.Error(w, "User not found", http.StatusNotFound)
@@ -140,8 +154,50 @@ func UpdateUser(ctx context.Context, client *mongo.Client, dbName, userCollectio
 
 	json.NewDecoder(r.Body).Decode(&user)
 	collection := client.Database(dbName).Collection(userCollection)
+	var updateFields bson.M = bson.M{}
+	if user.Name != "" {
+		updateFields["name"] = user.Name
+	}
+	if user.Password != "" {
+		updateFields["password"] = user.Password
+	}
+	if user.Phone != 0 {
+		updateFields["phone"] = user.Phone
+	}
+	if user.Email != "" {
+		updateFields["email"] = user.Email
+	}
+	if len(user.Role) > 0 {
+		updateFields["role"] = user.Role
+	}
+	if len(user.ServiceTypes) > 0 {
+		updateFields["service_types"] = user.ServiceTypes
+	}
+	if user.Locality != "" {
+		updateFields["locality"] = user.Locality
+	}
+	if user.Rating != 0 {
+		updateFields["rating"] = user.Rating
+	}
+	if user.BlockServices {
+		updateFields["block_services"] = user.BlockServices
+	}
+	if user.IsActive {
+		updateFields["is_active"] = user.IsActive
+	}
+	if !user.CreatedAt.IsZero() {
+		updateFields["created_at"] = user.CreatedAt
+	}
+	if user.RecoveryCode != 0 {
+		updateFields["recovery_code"] = user.RecoveryCode
+	}
 
-	result, err := collection.UpdateOne(ctx, bson.M{"phone": user.Phone}, user)
+	if len(updateFields) == 0 {
+		http.Error(w, "No fields to update", http.StatusBadRequest)
+		return
+	}
+
+	result, err := collection.UpdateOne(ctx, bson.M{"nif": user.NIF}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -161,7 +217,7 @@ func DeleteUser(ctx context.Context, client *mongo.Client, dbName, userCollectio
 	w.Header().Set("Content-Type", "application/json")
 
 	var requestBody struct {
-		Phone int64 `json:"phone"`
+		NIF int64 `json:"nif"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
@@ -172,7 +228,7 @@ func DeleteUser(ctx context.Context, client *mongo.Client, dbName, userCollectio
 
 	collection := client.Database(dbName).Collection(userCollection)
 
-	result, err := collection.DeleteOne(ctx, bson.M{"phone": requestBody.Phone})
+	result, err := collection.DeleteOne(ctx, bson.M{"nif": requestBody.NIF})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -190,7 +246,7 @@ func DeleteUser(ctx context.Context, client *mongo.Client, dbName, userCollectio
 func Login(ctx context.Context, client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
-		Phone    int64  `json:"phone"`
+		Email    int64  `json:"email"`
 		Password string `json:"password"`
 	}
 
@@ -203,7 +259,7 @@ func Login(ctx context.Context, client *mongo.Client, dbName, userCollection str
 	collection := client.Database(dbName).Collection(userCollection)
 
 	var user models.User
-	err = collection.FindOne(ctx, bson.M{"phone": requestBody.Phone}).Decode(&user)
+	err = collection.FindOne(ctx, bson.M{"email": requestBody.Email}).Decode(&user)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return

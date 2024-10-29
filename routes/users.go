@@ -42,12 +42,12 @@ func UserRoutes(ctx context.Context, client *mongo.Client, dbName, userCollectio
 
 	// Define route email verification of mb
 	router.HandleFunc("/api/mb/users/verification", func(w http.ResponseWriter, r *http.Request) {
-		api.VerificateEmail(ctx, w, r)
+		api.VerificateEmail(ctx, w, r, client, dbName, userCollection)
 	}).Methods("POST")
 
 	// Define route email verification of bo
 	router.HandleFunc("/api/bo/users/verification", func(w http.ResponseWriter, r *http.Request) {
-		api.VerificateEmail(ctx, w, r)
+		api.VerificateEmail(ctx, w, r, client, dbName, userCollection)
 	}).Methods("POST")
 
 	// Define route for admin login of bo
