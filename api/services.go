@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -28,4 +29,26 @@ func CreateService(ctx context.Context, client *mongo.Client, dbName, serviceCol
 	json.NewEncoder(w).Encode(result)
 }
 
-// Fetch Services
+// GetServices handles GET requests to get the list of users
+func GetServices(ctx context.Context, client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var services []models.Services
+
+	collection := client.Database(dbName).Collection(serviceCollection)
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var service models.Services
+		cursor.Decode(&service)
+		services = append(services, service)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(services)
+}

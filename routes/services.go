@@ -14,4 +14,9 @@ func ServiceRoutes(ctx context.Context, client *mongo.Client, dbName, serviceCol
 	router.HandleFunc("/api/services", func(w http.ResponseWriter, r *http.Request) {
 		api.CreateService(ctx, client, dbName, serviceCollection, w, r)
 	}).Methods("POST")
+
+	// Define route for getting all services
+	router.HandleFunc("/api/services", func(w http.ResponseWriter, r *http.Request) {
+		api.GetServices(ctx, client, dbName, serviceCollection, w, r)
+	}).Methods("GET")
 }
