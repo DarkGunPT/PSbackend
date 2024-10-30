@@ -82,3 +82,33 @@ func GetService(ctx context.Context, client *mongo.Client, dbName, serviceCollec
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(service)
 }
+
+func DeleteService(ctx context.Context, client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var requestBody struct {
+		ID primitive.ObjectID `json:"id"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	collection := client.Database(dbName).Collection(serviceCollection)
+
+	result, err := collection.DeleteOne(ctx, bson.M{"id": requestBody.ID})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if result.DeletedCount == 0 {
+		http.Error(w, "Service not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("Service deleted successfully")
+}
