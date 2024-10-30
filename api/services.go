@@ -69,7 +69,7 @@ func GetService(ctx context.Context, client *mongo.Client, dbName, serviceCollec
 	var service models.Services
 	collection := client.Database(dbName).Collection(serviceCollection)
 
-	err = collection.FindOne(ctx, bson.M{"id": requestBody.ID}).Decode(&service)
+	err = collection.FindOne(ctx, bson.M{"_id": requestBody.ID}).Decode(&service)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			http.Error(w, "Service not found", http.StatusNotFound)
@@ -98,7 +98,7 @@ func DeleteService(ctx context.Context, client *mongo.Client, dbName, serviceCol
 
 	collection := client.Database(dbName).Collection(serviceCollection)
 
-	result, err := collection.DeleteOne(ctx, bson.M{"id": requestBody.ID})
+	result, err := collection.DeleteOne(ctx, bson.M{"_id": requestBody.ID})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
