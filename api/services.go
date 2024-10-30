@@ -29,7 +29,7 @@ func CreateService(ctx context.Context, client *mongo.Client, dbName, serviceCol
 	json.NewEncoder(w).Encode(result)
 }
 
-// GetServices handles GET requests to get the list of users
+// GetServices handles GET requests to get the list of services
 func GetServices(ctx context.Context, client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var services []models.Services
@@ -51,4 +51,34 @@ func GetServices(ctx context.Context, client *mongo.Client, dbName, serviceColle
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(services)
+}
+
+// GetService handles GET requests to get one specific service
+func GetService(ctx context.Context, client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		ID primitive.ObjectID `json:"id"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var service models.Services
+	collection := client.Database(dbName).Collection(serviceCollection)
+
+	err = collection.FindOne(ctx, bson.M{"id": requestBody.ID}).Decode(&service)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "Service not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(service)
 }
