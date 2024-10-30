@@ -83,6 +83,7 @@ func GetService(ctx context.Context, client *mongo.Client, dbName, serviceCollec
 	json.NewEncoder(w).Encode(service)
 }
 
+// DeleteService handles DELETE request to delete a specific service
 func DeleteService(ctx context.Context, client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
