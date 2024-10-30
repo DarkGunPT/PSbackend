@@ -29,4 +29,9 @@ func ServiceRoutes(ctx context.Context, client *mongo.Client, dbName, serviceCol
 	router.HandleFunc("/api/services", func(w http.ResponseWriter, r *http.Request) {
 		api.DeleteService(ctx, client, dbName, serviceCollection, w, r)
 	}).Methods("DELETE")
+
+	// Define route to update a service
+	router.HandleFunc("/api/services", func(w http.ResponseWriter, r *http.Request) {
+		api.UpdateService(ctx, client, dbName, serviceCollection, w, r)
+	}).Methods("PUT")
 }

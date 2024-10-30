@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // CreateService handles POST requests to create a new service
@@ -112,4 +113,42 @@ func DeleteService(ctx context.Context, client *mongo.Client, dbName, serviceCol
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("Service deleted successfully")
+}
+
+// UpdateService handles PUT request to update one specific service
+func UpdateService(ctx context.Context, client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var service models.Services
+
+	json.NewDecoder(r.Body).Decode(&service)
+	collection := client.Database(dbName).Collection(serviceCollection)
+	var updateFields bson.M = bson.M{}
+	if service.ServiceType != (models.ServiceType{}) {
+		updateFields["service_type"] = service.ServiceType
+	}
+	if service.Description != "" {
+		updateFields["description"] = service.Description
+	}
+	if len(service.Appointment) > 0 {
+		updateFields["appointments"] = service.Appointment
+	}
+
+	if len(updateFields) == 0 {
+		http.Error(w, "No fields to update", http.StatusBadRequest)
+		return
+	}
+
+	result, err := collection.UpdateOne(ctx, bson.M{"_id": service.ID}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if result.ModifiedCount == 0 {
+		http.Error(w, "Service not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("Service updated successfully")
 }
