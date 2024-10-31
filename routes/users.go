@@ -54,4 +54,9 @@ func UserRoutes(ctx context.Context, client *mongo.Client, dbName, userCollectio
 	router.HandleFunc("/api/bo/users/login", func(w http.ResponseWriter, r *http.Request) {
 		api.LoginAdmin(ctx, client, dbName, userCollection, w, r)
 	}).Methods("POST")
+
+	// Define route for creating a new role
+	router.HandleFunc("/api/users/role", func(w http.ResponseWriter, r *http.Request) {
+		api.CreateRole(ctx, client, dbName, userCollection, w, r)
+	}).Methods("POST")
 }
