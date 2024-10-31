@@ -316,3 +316,23 @@ func LoginAdmin(ctx context.Context, client *mongo.Client, dbName, userCollectio
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("Login successful")
 }
+
+// CreateRole handles POST requests to create a new role
+func CreateRole(ctx context.Context, client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var role models.Role
+
+	json.NewDecoder(r.Body).Decode(&role)
+	role.ID = primitive.NewObjectID()
+
+	collection := client.Database(dbName).Collection(userCollection)
+
+	result, err := collection.InsertOne(ctx, role)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
+}
