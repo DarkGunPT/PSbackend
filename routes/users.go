@@ -4,6 +4,7 @@ import (
 	"PSbackend/api"
 	"context"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -57,6 +58,6 @@ func UserRoutes(ctx context.Context, client *mongo.Client, dbName, userCollectio
 
 	// Define route for creating a new role
 	router.HandleFunc("/api/users/role", func(w http.ResponseWriter, r *http.Request) {
-		api.CreateRole(ctx, client, dbName, userCollection, w, r)
+		api.CreateRole(ctx, client, dbName, os.Getenv("ROLES_COLLECTION"), w, r)
 	}).Methods("POST")
 }
