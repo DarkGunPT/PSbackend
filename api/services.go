@@ -152,3 +152,23 @@ func UpdateService(ctx context.Context, client *mongo.Client, dbName, serviceCol
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("Service updated successfully")
 }
+
+// CreateServiceType handles POST requests to create a specific service type
+func CreateServiceType(ctx context.Context, client *mongo.Client, dbName, serviceTypeCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var serviceType models.ServiceType
+
+	json.NewDecoder(r.Body).Decode(&serviceType)
+	serviceType.ID = primitive.NewObjectID()
+
+	collection := client.Database(dbName).Collection(serviceTypeCollection)
+
+	result, err := collection.InsertOne(ctx, serviceType)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
+}

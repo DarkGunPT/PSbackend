@@ -4,6 +4,7 @@ import (
 	"PSbackend/api"
 	"context"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -34,4 +35,9 @@ func ServiceRoutes(ctx context.Context, client *mongo.Client, dbName, serviceCol
 	router.HandleFunc("/api/services", func(w http.ResponseWriter, r *http.Request) {
 		api.UpdateService(ctx, client, dbName, serviceCollection, w, r)
 	}).Methods("PUT")
+
+	// Define route for creating a new specific service type
+	router.HandleFunc("/api/bo/services", func(w http.ResponseWriter, r *http.Request) {
+		api.CreateServiceType(ctx, client, dbName, os.Getenv("SERVICE_TYPE_COLLECTION"), w, r)
+	}).Methods("POST")
 }
