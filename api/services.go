@@ -172,3 +172,27 @@ func CreateServiceType(ctx context.Context, client *mongo.Client, dbName, servic
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(result)
 }
+
+// GetServiceType handles GET requests to get the list of service types
+func GetServiceType(ctx context.Context, client *mongo.Client, dbName, serviceTypeCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var servicesType []models.ServiceType
+
+	collection := client.Database(dbName).Collection(serviceTypeCollection)
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var serviceType models.ServiceType
+		cursor.Decode(&serviceType)
+		servicesType = append(servicesType, serviceType)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(servicesType)
+}

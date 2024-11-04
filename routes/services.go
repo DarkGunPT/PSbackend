@@ -40,4 +40,9 @@ func ServiceRoutes(ctx context.Context, client *mongo.Client, dbName, serviceCol
 	router.HandleFunc("/api/bo/services", func(w http.ResponseWriter, r *http.Request) {
 		api.CreateServiceType(ctx, client, dbName, os.Getenv("SERVICE_TYPE_COLLECTION"), w, r)
 	}).Methods("POST")
+
+	// Define route for getting all services types
+	router.HandleFunc("/services/type", func(w http.ResponseWriter, r *http.Request) {
+		api.GetServiceType(ctx, client, dbName, os.Getenv("SERVICE_TYPE_COLLECTION"), w, r)
+	}).Methods("GET")
 }
