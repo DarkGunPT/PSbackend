@@ -246,7 +246,7 @@ func DeleteUser(ctx context.Context, client *mongo.Client, dbName, userCollectio
 func Login(ctx context.Context, client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
-		Email    int64  `json:"email"`
+		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 
