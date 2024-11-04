@@ -27,20 +27,20 @@ func setupRouter() *http.ServeMux {
 
 	router.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
-			CreateUser(context.Background(), client, "PSprojectTest", "Users", w, r)
+			CreateUser(client, "PSprojectTest", "Users", w, r)
 		} else if r.Method == http.MethodGet {
-			GetUsers(context.Background(), client, "PSprojectTest", "Users", w, r)
+			GetUsers(client, "PSprojectTest", "Users", w, r)
 		} else if r.Method == http.MethodDelete {
-			DeleteUser(context.Background(), client, "PSprojectTest", "Users", w, r)
+			DeleteUser(client, "PSprojectTest", "Users", w, r)
 		}
 	})
 
 	router.HandleFunc("/api/users/login", func(w http.ResponseWriter, r *http.Request) {
-		Login(context.Background(), client, "PSprojectTest", "Users", w, r)
+		Login(client, "PSprojectTest", "Users", w, r)
 	})
 
 	router.HandleFunc("/api/users/phone", func(w http.ResponseWriter, r *http.Request) {
-		GetUser(context.Background(), client, "PSprojectTest", "Users", w, r)
+		GetUser(client, "PSprojectTest", "Users", w, r)
 	})
 
 	return router

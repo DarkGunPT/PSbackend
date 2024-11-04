@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
@@ -18,7 +19,7 @@ import (
 )
 
 // VerificateEmail is responsible for sending an email with a verification code to the user's email address
-func VerificateEmail(ctx context.Context, w http.ResponseWriter, r *http.Request, mongo *mongo.Client, dbName, userCollection string) {
+func VerificateEmail(w http.ResponseWriter, r *http.Request, mongo *mongo.Client, dbName, userCollection string) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
 		Email string `json:"email"`
@@ -33,7 +34,8 @@ func VerificateEmail(ctx context.Context, w http.ResponseWriter, r *http.Request
 	code := rand.Intn(8999) + 1000
 
 	collection := mongo.Database(dbName).Collection(userCollection)
-
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	result, err := collection.UpdateOne(ctx, bson.M{"email": requestBody.Email}, bson.M{"$set": bson.M{"recovery_code": code}}, options.Update().SetUpsert(true))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -74,7 +76,7 @@ func VerificateEmail(ctx context.Context, w http.ResponseWriter, r *http.Request
 }
 
 // CreateUser handles POST requests to create a new user
-func CreateUser(ctx context.Context, client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+func CreateUser(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var user models.User
 
@@ -82,7 +84,8 @@ func CreateUser(ctx context.Context, client *mongo.Client, dbName, userCollectio
 	user.ID = primitive.NewObjectID()
 
 	collection := client.Database(dbName).Collection(userCollection)
-
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	result, err := collection.InsertOne(ctx, user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -94,12 +97,13 @@ func CreateUser(ctx context.Context, client *mongo.Client, dbName, userCollectio
 }
 
 // GetUsers handles GET requests to get the list of users
-func GetUsers(ctx context.Context, client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+func GetUsers(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var users []models.User
 
 	collection := client.Database(dbName).Collection(userCollection)
-
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -118,7 +122,7 @@ func GetUsers(ctx context.Context, client *mongo.Client, dbName, userCollection 
 }
 
 // GetUser handles GET requests to get one specific user
-func GetUser(ctx context.Context, client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+func GetUser(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
 		NIF int64 `json:"nif"`
@@ -132,7 +136,8 @@ func GetUser(ctx context.Context, client *mongo.Client, dbName, userCollection s
 
 	var user models.User
 	collection := client.Database(dbName).Collection(userCollection)
-
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	err = collection.FindOne(ctx, bson.M{"nif": requestBody.NIF}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -148,11 +153,13 @@ func GetUser(ctx context.Context, client *mongo.Client, dbName, userCollection s
 }
 
 // UpdateUser handles PUT request to update one specific user
-func UpdateUser(ctx context.Context, client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var user models.User
 
 	json.NewDecoder(r.Body).Decode(&user)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	collection := client.Database(dbName).Collection(userCollection)
 	var updateFields bson.M = bson.M{}
 	if user.Name != "" {
@@ -213,7 +220,7 @@ func UpdateUser(ctx context.Context, client *mongo.Client, dbName, userCollectio
 }
 
 // DeleteUser handles DELETE request to delete a specific user
-func DeleteUser(ctx context.Context, client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+func DeleteUser(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var requestBody struct {
@@ -226,6 +233,8 @@ func DeleteUser(ctx context.Context, client *mongo.Client, dbName, userCollectio
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	collection := client.Database(dbName).Collection(userCollection)
 
 	result, err := collection.DeleteOne(ctx, bson.M{"nif": requestBody.NIF})
@@ -243,7 +252,7 @@ func DeleteUser(ctx context.Context, client *mongo.Client, dbName, userCollectio
 	json.NewEncoder(w).Encode("User deleted successfully")
 }
 
-func Login(ctx context.Context, client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+func Login(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
 		Email    string `json:"email"`
@@ -259,6 +268,8 @@ func Login(ctx context.Context, client *mongo.Client, dbName, userCollection str
 	collection := client.Database(dbName).Collection(userCollection)
 
 	var user models.User
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	err = collection.FindOne(ctx, bson.M{"email": requestBody.Email}).Decode(&user)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
@@ -274,7 +285,7 @@ func Login(ctx context.Context, client *mongo.Client, dbName, userCollection str
 	json.NewEncoder(w).Encode("Login successful")
 }
 
-func LoginAdmin(ctx context.Context, client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+func LoginAdmin(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	var isAdmin bool
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
@@ -291,6 +302,8 @@ func LoginAdmin(ctx context.Context, client *mongo.Client, dbName, userCollectio
 	collection := client.Database(dbName).Collection(userCollection)
 
 	var user models.User
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	err = collection.FindOne(ctx, bson.M{"email": requestBody.Email}).Decode(&user)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
@@ -318,13 +331,14 @@ func LoginAdmin(ctx context.Context, client *mongo.Client, dbName, userCollectio
 }
 
 // CreateRole handles POST requests to create a new role
-func CreateRole(ctx context.Context, client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+func CreateRole(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var role models.Role
 
 	json.NewDecoder(r.Body).Decode(&role)
 	role.ID = primitive.NewObjectID()
-
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	collection := client.Database(dbName).Collection(userCollection)
 
 	result, err := collection.InsertOne(ctx, role)

@@ -15,7 +15,7 @@ import (
 
 func main() {
 	// Create context with timeout for connecting to MongoDB
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	// Load environment variables from .env file
@@ -44,7 +44,7 @@ func main() {
 	router := mux.NewRouter()
 
 	// Register user-related routes
-	routes.UserRoutes(ctx, client, os.Getenv("DB_NAME"), os.Getenv("USER_COLLECTION"), router)
+	routes.UserRoutes(client, os.Getenv("DB_NAME"), os.Getenv("USER_COLLECTION"), router)
 
 	// Register service-related routes
 	routes.ServiceRoutes(ctx, client, os.Getenv("DB_NAME"), os.Getenv("SERVICE_COLLECTION"), router)
