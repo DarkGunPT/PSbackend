@@ -45,4 +45,9 @@ func ServiceRoutes(ctx context.Context, client *mongo.Client, dbName, serviceCol
 	router.HandleFunc("/services/type", func(w http.ResponseWriter, r *http.Request) {
 		api.GetServiceType(ctx, client, dbName, os.Getenv("SERVICE_TYPE_COLLECTION"), w, r)
 	}).Methods("GET")
+
+	// Define route to update a service type
+	router.HandleFunc("/services/type", func(w http.ResponseWriter, r *http.Request) {
+		api.UpdateServiceType(ctx, client, dbName, os.Getenv("SERVICE_TYPE_COLLECTION"), w, r)
+	}).Methods("PUT")
 }

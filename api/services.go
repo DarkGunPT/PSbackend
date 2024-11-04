@@ -196,3 +196,36 @@ func GetServiceType(ctx context.Context, client *mongo.Client, dbName, serviceTy
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(servicesType)
 }
+
+// UpdateServiceType handles PUT request to update one specific service type
+func UpdateServiceType(ctx context.Context, client *mongo.Client, dbName, serviceTypeCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var serviceType models.ServiceType
+
+	json.NewDecoder(r.Body).Decode(&serviceType)
+	collection := client.Database(dbName).Collection(serviceTypeCollection)
+	var updateFields bson.M = bson.M{}
+
+	if serviceType.Name != "" {
+		updateFields["name"] = serviceType.Name
+	}
+
+	if len(updateFields) == 0 {
+		http.Error(w, "No fields to update", http.StatusBadRequest)
+		return
+	}
+
+	result, err := collection.UpdateOne(ctx, bson.M{"_id": serviceType.ID}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if result.ModifiedCount == 0 {
+		http.Error(w, "Service not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("Service updated successfully")
+}
