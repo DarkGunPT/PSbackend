@@ -47,7 +47,7 @@ func main() {
 	routes.UserRoutes(client, os.Getenv("DB_NAME"), os.Getenv("USER_COLLECTION"), router)
 
 	// Register service-related routes
-	routes.ServiceRoutes(ctx, client, os.Getenv("DB_NAME"), os.Getenv("SERVICE_COLLECTION"), router)
+	routes.ServiceRoutes(client, os.Getenv("DB_NAME"), os.Getenv("SERVICE_COLLECTION"), router)
 
 	log.Println("Starting the http server at port :8080")
 	// Start the HTTP server on port 8080

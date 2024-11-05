@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,7 +14,7 @@ import (
 )
 
 // CreateService handles POST requests to create a new service
-func CreateService(ctx context.Context, client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+func CreateService(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var service models.Services
 
@@ -21,7 +22,8 @@ func CreateService(ctx context.Context, client *mongo.Client, dbName, serviceCol
 	service.ID = primitive.NewObjectID()
 
 	collection := client.Database(dbName).Collection(serviceCollection)
-
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	result, err := collection.InsertOne(ctx, service)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -31,12 +33,13 @@ func CreateService(ctx context.Context, client *mongo.Client, dbName, serviceCol
 }
 
 // GetServices handles GET requests to get the list of services
-func GetServices(ctx context.Context, client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+func GetServices(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var services []models.Services
 
 	collection := client.Database(dbName).Collection(serviceCollection)
-
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -55,7 +58,7 @@ func GetServices(ctx context.Context, client *mongo.Client, dbName, serviceColle
 }
 
 // GetService handles GET requests to get one specific service
-func GetService(ctx context.Context, client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+func GetService(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
 		ID primitive.ObjectID `json:"id"`
@@ -69,7 +72,8 @@ func GetService(ctx context.Context, client *mongo.Client, dbName, serviceCollec
 
 	var service models.Services
 	collection := client.Database(dbName).Collection(serviceCollection)
-
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	err = collection.FindOne(ctx, bson.M{"_id": requestBody.ID}).Decode(&service)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -85,7 +89,7 @@ func GetService(ctx context.Context, client *mongo.Client, dbName, serviceCollec
 }
 
 // DeleteService handles DELETE request to delete a specific service
-func DeleteService(ctx context.Context, client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+func DeleteService(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var requestBody struct {
@@ -98,6 +102,8 @@ func DeleteService(ctx context.Context, client *mongo.Client, dbName, serviceCol
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	collection := client.Database(dbName).Collection(serviceCollection)
 
 	result, err := collection.DeleteOne(ctx, bson.M{"_id": requestBody.ID})
@@ -116,11 +122,13 @@ func DeleteService(ctx context.Context, client *mongo.Client, dbName, serviceCol
 }
 
 // UpdateService handles PUT request to update one specific service
-func UpdateService(ctx context.Context, client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+func UpdateService(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var service models.Services
 
 	json.NewDecoder(r.Body).Decode(&service)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	collection := client.Database(dbName).Collection(serviceCollection)
 	var updateFields bson.M = bson.M{}
 	if service.ServiceType != (models.ServiceType{}) {
@@ -154,13 +162,15 @@ func UpdateService(ctx context.Context, client *mongo.Client, dbName, serviceCol
 }
 
 // CreateServiceType handles POST requests to create a specific service type
-func CreateServiceType(ctx context.Context, client *mongo.Client, dbName, serviceTypeCollection string, w http.ResponseWriter, r *http.Request) {
+func CreateServiceType(client *mongo.Client, dbName, serviceTypeCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var serviceType models.ServiceType
 
 	json.NewDecoder(r.Body).Decode(&serviceType)
 	serviceType.ID = primitive.NewObjectID()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	collection := client.Database(dbName).Collection(serviceTypeCollection)
 
 	result, err := collection.InsertOne(ctx, serviceType)
@@ -174,10 +184,12 @@ func CreateServiceType(ctx context.Context, client *mongo.Client, dbName, servic
 }
 
 // GetServiceType handles GET requests to get the list of service types
-func GetServiceType(ctx context.Context, client *mongo.Client, dbName, serviceTypeCollection string, w http.ResponseWriter, r *http.Request) {
+func GetServiceType(client *mongo.Client, dbName, serviceTypeCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var servicesType []models.ServiceType
 
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	collection := client.Database(dbName).Collection(serviceTypeCollection)
 
 	cursor, err := collection.Find(ctx, bson.M{})
@@ -198,11 +210,13 @@ func GetServiceType(ctx context.Context, client *mongo.Client, dbName, serviceTy
 }
 
 // UpdateServiceType handles PUT request to update one specific service type
-func UpdateServiceType(ctx context.Context, client *mongo.Client, dbName, serviceTypeCollection string, w http.ResponseWriter, r *http.Request) {
+func UpdateServiceType(client *mongo.Client, dbName, serviceTypeCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var serviceType models.ServiceType
 
 	json.NewDecoder(r.Body).Decode(&serviceType)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	collection := client.Database(dbName).Collection(serviceTypeCollection)
 	var updateFields bson.M = bson.M{}
 
@@ -228,4 +242,37 @@ func UpdateServiceType(ctx context.Context, client *mongo.Client, dbName, servic
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("Service updated successfully")
+}
+
+// DeleteServiceType handles DELETE request to delete a specific service type
+func DeleteServiceType(client *mongo.Client, dbName, serviceTypeCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var requestBody struct {
+		ID primitive.ObjectID `json:"id"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	collection := client.Database(dbName).Collection(serviceTypeCollection)
+
+	result, err := collection.DeleteOne(ctx, bson.M{"_id": requestBody.ID})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if result.DeletedCount == 0 {
+		http.Error(w, "Service not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("Service deleted successfully")
 }
