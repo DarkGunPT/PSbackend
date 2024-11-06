@@ -13,6 +13,13 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// disableCORS Middleware function to disable CORS
+func disableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	// Create context with timeout for connecting to MongoDB
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -51,7 +58,7 @@ func main() {
 
 	log.Println("Starting the http server at port :8080")
 	// Start the HTTP server on port 8080
-	err = http.ListenAndServe(":8080", router)
+	err = http.ListenAndServe(":8080", disableCORS(router))
 	if err != nil {
 		log.Fatal("Error starting the http server:", err)
 		return
