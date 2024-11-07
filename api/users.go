@@ -75,12 +75,59 @@ func VerificateEmail(w http.ResponseWriter, r *http.Request, mongo *mongo.Client
 	json.NewEncoder(w).Encode(jsonResponse)
 }
 
+// Confirm the given code from user with the one saved in database
+func ConfirmAuthCode(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		Email string `json:"email"`
+		Code  int    `json:"code"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+	collection := client.Database(dbName).Collection(userCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	err = collection.FindOne(ctx, bson.M{"email": requestBody.Email}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if user.RecoveryCode != requestBody.Code {
+		http.Error(w, "Incorrect email verification code", http.StatusUnauthorized)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(user)
+}
+
 // CreateUser handles POST requests to create a new user
 func CreateUser(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		Email string `json:"email"`
+		Code  int    `json:"code"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
 	var user models.User
 
-	json.NewDecoder(r.Body).Decode(&user)
 	user.ID = primitive.NewObjectID()
 
 	collection := client.Database(dbName).Collection(userCollection)
