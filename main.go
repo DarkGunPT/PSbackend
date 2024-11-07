@@ -13,9 +13,24 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// disableCORS Middleware function to disable CORS
-func disableCORS(next http.Handler) http.Handler {
+var allowedOrigins = map[string]bool{
+	"http://localhost:4200":               true,
+	"https://fixfinder-admin.netlify.app": true,
+}
+
+func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if allowedOrigins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+		}
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }
@@ -58,7 +73,7 @@ func main() {
 
 	log.Println("Starting the http server at port :8080")
 	// Start the HTTP server on port 8080
-	err = http.ListenAndServe(":8080", disableCORS(router))
+	err = http.ListenAndServe(":8080", corsMiddleware(router))
 	if err != nil {
 		log.Fatal("Error starting the http server:", err)
 		return
