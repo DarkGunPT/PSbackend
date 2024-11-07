@@ -64,4 +64,9 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 	router.HandleFunc("/api/users/technicians", func(w http.ResponseWriter, r *http.Request) {
 		api.GetTechnicians(client, dbName, userCollection, w, r)
 	}).Methods("GET")
+
+	// Define route to get clients
+	router.HandleFunc("/api/users/clients", func(w http.ResponseWriter, r *http.Request) {
+		api.GetClients(client, dbName, userCollection, w, r)
+	}).Methods("GET")
 }
