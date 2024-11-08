@@ -42,7 +42,7 @@ func VerificateEmail(w http.ResponseWriter, r *http.Request, mongo *mongo.Client
 		return
 	}
 
-	if result.ModifiedCount == 0 {
+	if result.ModifiedCount == 0 && result.UpsertedID == nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
@@ -116,8 +116,8 @@ func ConfirmAuthCode(client *mongo.Client, dbName, userCollection string, w http
 func CreateUser(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
-		Email string `json:"email"`
-		Code  int    `json:"code"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
@@ -126,21 +126,26 @@ func CreateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 		return
 	}
 
-	var user models.User
-
-	user.ID = primitive.NewObjectID()
-
 	collection := client.Database(dbName).Collection(userCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	result, err := collection.InsertOne(ctx, user)
+	result, err := collection.UpdateOne(ctx, bson.M{"email": requestBody.Email}, bson.M{"$set": bson.M{"password": requestBody.Password}}, options.Update().SetUpsert(true))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	if result.ModifiedCount == 0 && result.UpsertedID == nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	jsonResponse := map[string]interface{}{
+		"message": "User created successfully",
+	}
+
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(result)
+	json.NewEncoder(w).Encode(jsonResponse)
 }
 
 // GetUsers handles GET requests to get the list of users
