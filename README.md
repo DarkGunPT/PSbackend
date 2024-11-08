@@ -23,14 +23,8 @@ This repository contains the backend code for FixFinder, a platform designed to 
     * Request body:
         ```json
         {
-          "nif": int,
-          "name": string,
-          "phone": int,
           "email": string,
           "password": string,
-          "locality": string,
-          "role": [string],
-          "serviceTypes": [string]
         }
         ```
 * **GET /api/users:** Retrieves all users.
