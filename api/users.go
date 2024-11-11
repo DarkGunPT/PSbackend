@@ -79,8 +79,9 @@ func VerificateEmail(w http.ResponseWriter, r *http.Request, mongo *mongo.Client
 func ConfirmAuthCode(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
-		Email string `json:"email"`
-		Code  int    `json:"code"`
+		Email    string `json:"email"`
+		Code     int    `json:"code"`
+		Password string `json:"password"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
@@ -108,26 +109,7 @@ func ConfirmAuthCode(client *mongo.Client, dbName, userCollection string, w http
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user)
-}
-
-// CreateUser handles POST requests to create a new user
-func CreateUser(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var requestBody struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-
-	err := json.NewDecoder(r.Body).Decode(&requestBody)
-	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
-	}
-
-	collection := client.Database(dbName).Collection(userCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	result, err := collection.UpdateOne(ctx, bson.M{"email": requestBody.Email}, bson.M{"$set": bson.M{"password": requestBody.Password}}, options.Update().SetUpsert(true))
 	if err != nil {
@@ -140,12 +122,8 @@ func CreateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 		return
 	}
 
-	jsonResponse := map[string]interface{}{
-		"message": "User created successfully",
-	}
-
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(jsonResponse)
+	json.NewEncoder(w).Encode(user)
 }
 
 // GetUsers handles GET requests to get the list of users

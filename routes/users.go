@@ -10,11 +10,6 @@ import (
 )
 
 func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux.Router) {
-	// Define route for creating a new user
-	router.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
-		api.CreateUser(client, dbName, userCollection, w, r)
-	}).Methods("POST")
-
 	// Define route to get users
 	router.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
 		api.GetUsers(client, dbName, userCollection, w, r)
@@ -40,16 +35,6 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 		api.Login(client, dbName, userCollection, w, r)
 	}).Methods("POST")
 
-	// Define route email verification of mb
-	router.HandleFunc("/api/mb/users/recovery", func(w http.ResponseWriter, r *http.Request) {
-		api.VerificateEmail(w, r, client, dbName, userCollection)
-	}).Methods("POST")
-
-	// Define route email verification of bo
-	router.HandleFunc("/api/bo/users/verification", func(w http.ResponseWriter, r *http.Request) {
-		api.VerificateEmail(w, r, client, dbName, userCollection)
-	}).Methods("POST")
-
 	// Define route for admin login of bo
 	router.HandleFunc("/api/bo/users/login", func(w http.ResponseWriter, r *http.Request) {
 		api.LoginAdmin(client, dbName, userCollection, w, r)
@@ -70,8 +55,13 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 		api.GetClients(client, dbName, userCollection, w, r)
 	}).Methods("GET")
 
+	// Define route email verification of mb
+	router.HandleFunc("/api/users/email", func(w http.ResponseWriter, r *http.Request) {
+		api.VerificateEmail(w, r, client, dbName, userCollection)
+	}).Methods("POST")
+
 	// Define route to get clients
-	router.HandleFunc("/api/users/recovery-confirmation", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/users/email-confirmation", func(w http.ResponseWriter, r *http.Request) {
 		api.ConfirmAuthCode(client, dbName, userCollection, w, r)
 	}).Methods("POST")
 }
