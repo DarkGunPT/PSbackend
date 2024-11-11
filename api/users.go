@@ -234,7 +234,7 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 		return
 	}
 
-	result, err := collection.UpdateOne(ctx, bson.M{"nif": user.NIF}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
+	result, err := collection.UpdateOne(ctx, bson.M{"email": user.Email}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
