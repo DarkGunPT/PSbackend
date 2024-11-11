@@ -64,20 +64,6 @@ This repository contains the backend code for FixFinder, a platform designed to 
           "password": string
         }
         ```
-* **POST /api/mb/users/recovery:** Sends a verification code to the user's email for recovery (mobile users).
-    * Request body:
-        ```json
-        {
-          "email": string
-        }
-        ```
-* **POST /api/bo/users/verification:** Sends a verification code to the user's email for verification (back-office users).
-    * Request body:
-        ```json
-        {
-          "email": string
-        }
-        ```
 * **POST /api/bo/users/login:** Logs in an admin user (for back-office).
     * Request body:
         ```json
@@ -95,12 +81,20 @@ This repository contains the backend code for FixFinder, a platform designed to 
         ```
 * **GET /api/users/technicians:** Retrieves all technicians.
 * **GET /api/users/clients:** Retrieves all clients.
-* **POST /api/users/recovery-confirmation:** Confirms an authentication code for user recovery.
+* **POST /api/mb/users/email:** Sends a verification code to the user's email for recovery (mobile users).
+    * Request body:
+        ```json
+        {
+          "email": string
+        }
+        ```
+* **POST /api/users/email-confirmation:** Confirms an authentication code for user recovery.
     * Request body:
         ```json
         {
           "email": string,
-          "code": int
+          "code": int,
+          "password": string
         }
         ```
 
