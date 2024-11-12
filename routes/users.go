@@ -55,13 +55,23 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 		api.GetClients(client, dbName, userCollection, w, r)
 	}).Methods("GET")
 
-	// Define route email verification of mb
+	// Define route to send email with a code to verify
 	router.HandleFunc("/api/users/email", func(w http.ResponseWriter, r *http.Request) {
 		api.VerificateEmail(w, r, client, dbName, userCollection)
 	}).Methods("POST")
 
-	// Define route to get clients
+	// Define route to confirm the code set by the user and define the new password
 	router.HandleFunc("/api/users/email-confirmation", func(w http.ResponseWriter, r *http.Request) {
+		api.ConfirmAuthCode(client, dbName, userCollection, w, r)
+	}).Methods("POST")
+
+	// Define route to send recovery email with a code to verify
+	router.HandleFunc("/api/users/recovery", func(w http.ResponseWriter, r *http.Request) {
+		api.VerificateEmail(w, r, client, dbName, userCollection)
+	}).Methods("POST")
+
+	// Define route to confirm the code set by the user and define the new password
+	router.HandleFunc("/api/users/recovery-confirmation", func(w http.ResponseWriter, r *http.Request) {
 		api.ConfirmAuthCode(client, dbName, userCollection, w, r)
 	}).Methods("POST")
 }
