@@ -88,6 +88,43 @@ func GetService(client *mongo.Client, dbName, serviceCollection string, w http.R
 	json.NewEncoder(w).Encode(service)
 }
 
+// GetServiceType handles GET requests to get the filtered list of services by type
+func GetFilteredServiceType(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var services []models.Services
+
+	var filter struct {
+		ServiceType string `json:"service_type"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&filter)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	collection := client.Database(dbName).Collection(serviceCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cursor, err := collection.Find(ctx, bson.M{"service_type.name": filter.ServiceType})
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var service models.Services
+		cursor.Decode(&service)
+		services = append(services, service)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(services)
+}
+
 // DeleteService handles DELETE request to delete a specific service
 func DeleteService(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

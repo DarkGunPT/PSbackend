@@ -25,6 +25,11 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection string, route
 		api.GetService(client, dbName, serviceCollection, w, r)
 	}).Methods("GET")
 
+	// Define route for getting all filtered services by type
+	router.HandleFunc("/api/services/type", func(w http.ResponseWriter, r *http.Request) {
+		api.GetFilteredServiceType(client, dbName, serviceCollection, w, r)
+	}).Methods("GET")
+
 	// Define route to delete a service by id
 	router.HandleFunc("/api/services", func(w http.ResponseWriter, r *http.Request) {
 		api.DeleteService(client, dbName, serviceCollection, w, r)
