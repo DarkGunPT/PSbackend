@@ -280,38 +280,36 @@ func DeleteServiceType(client *mongo.Client, dbName, serviceTypeCollection strin
 // GetServiceByTechnician handles GET requests to get one specific service
 func GetServiceByTechnician(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	var services []models.Services
 
-	var requestBody struct {
-		EmployeeID primitive.ObjectID `json:"employee_id"`
+	var filter struct {
+		EmployeeID string `json:"employee_id"`
 	}
 
-	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	err := json.NewDecoder(r.Body).Decode(&filter)
 	if err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
-	var services []models.Services
 	collection := client.Database(dbName).Collection(serviceCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	filter := bson.M{"employee_id": requestBody.EmployeeID}
-	cursor, err := collection.Find(ctx, filter)
+	cursor, err := collection.Find(ctx, bson.M{
+		"employee_id": filter.EmployeeID,
+	})
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer cursor.Close(ctx)
 
-	if err := cursor.All(ctx, &services); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if len(services) == 0 {
-		http.Error(w, "No services found for this employee", http.StatusNotFound)
-		return
+	for cursor.Next(ctx) {
+		var service models.Services
+		cursor.Decode(&service)
+		services = append(services, service)
 	}
 
 	w.WriteHeader(http.StatusOK)
