@@ -60,8 +60,13 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection string, route
 		api.DeleteService(client, dbName, serviceCollection, w, r)
 	}).Methods("DELETE")
 
-	// Define route to update a service
-	router.HandleFunc("/services", func(w http.ResponseWriter, r *http.Request) {
+	// Define route to update a service for Back Office
+	router.HandleFunc("/bo/services", func(w http.ResponseWriter, r *http.Request) {
+		api.UpdateService(client, dbName, serviceCollection, w, r)
+	}).Methods("PUT")
+
+	// Define route to update a service for Mobile App
+	router.HandleFunc("/mb/services", func(w http.ResponseWriter, r *http.Request) {
 		api.UpdateService(client, dbName, serviceCollection, w, r)
 	}).Methods("PUT")
 
