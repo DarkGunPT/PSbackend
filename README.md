@@ -100,7 +100,8 @@ This repository contains the backend code for FixFinder, a platform designed to 
 
 ### Services
 
-* **POST /api/services:** Creates a new service.
+* **POST /bo/services:** Creates a new service for Back Office.
+* **POST /mb/services:** Creates a new service for Mobile App.
     * Request body:
         ```json
         {
@@ -110,22 +111,35 @@ This repository contains the backend code for FixFinder, a platform designed to 
           "description": string
         }
         ```
-* **GET /api/services:** Retrieves all services.
-* **GET /api/services/id:** Retrieves a service by ID.
+* **GET /bo/services:** Retrieves all services for Back Office.
+* **GET /mb/services:** Retrieves all services for Mobile App.
+
+* **GET /bo/services/id:** Retrieves a service by ID for Back Office.
+* **GET /mb/services/id:** Retrieves a service by ID for Mobile App.
     * Request body:
         ```json
         {
           "id": string
         }
         ```
-* **DELETE /api/services:** Deletes a service by ID.
+* **GET /bo/services/type:** Retrieves all filtered services by type for Back Office.
+* **GET /mb/services/type:** Retrieves all filtered services by type for Mobile App.
+    * Request body:
+        ```json
+        {
+          "service_type": string
+        }
+      ```      
+* **DELETE /bo/services:** Deletes a service by ID for Back Office.
+* **DELETE /mb/services:** Deletes a service by ID for Mobile App.
     * Request body:
         ```json
         {
           "id": string
         }
         ```
-* **PUT /api/services:** Updates an existing service.
+* **PUT /bo/services:** Updates an existing service for Back Office.
+* **PUT /mb/services:** Updates an existing service for Mobile App.
     * Request body:
         ```json
         {
@@ -136,15 +150,18 @@ This repository contains the backend code for FixFinder, a platform designed to 
           "description": string
         }
         ```
-* **POST /api/bo/services:** Creates a new service type.
+* **POST /bo/service-type:** Creates a new service type for Back Office.
+* **POST /mb/service-type:** Creates a new service type for Mobile App.
     * Request body:
         ```json
         {
           "name": string
         }
         ```
-* **GET /services/type:** Retrieves all service types.
-* **PUT /services/type:** Updates an existing service type.
+* **GET /bo/service-type:** Retrieves all service types for Back Office.
+* **GET /mb/service-type:** Retrieves all service types for Mobile App.
+* **PUT /bo/service-type:** Updates an existing service type for Back Office.
+* **PUT /mb/service-type:** Updates an existing service type for Mobile App.
     * Request body:
         ```json
         {
@@ -152,7 +169,8 @@ This repository contains the backend code for FixFinder, a platform designed to 
           "name": string
         }
         ```
-* **DELETE /services/type:** Deletes a service type by ID.
+* **DELETE /bo/service-type:** Deletes a service type by ID for Back Office.
+* **DELETE /mb/service-type:** Deletes a service type by ID for Mobile App.
     * Request body:
         ```json
         {
