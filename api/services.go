@@ -276,3 +276,44 @@ func DeleteServiceType(client *mongo.Client, dbName, serviceTypeCollection strin
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("Service deleted successfully")
 }
+
+// GetServiceByTechnician handles GET requests to get one specific service
+func GetServiceByTechnician(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var requestBody struct {
+		EmployeeID primitive.ObjectID `json:"employee_id"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var services []models.Services
+	collection := client.Database(dbName).Collection(serviceCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	filter := bson.M{"employee_id": requestBody.EmployeeID}
+	cursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	if err := cursor.All(ctx, &services); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if len(services) == 0 {
+		http.Error(w, "No services found for this employee", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(services)
+}
