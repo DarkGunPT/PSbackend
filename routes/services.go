@@ -109,4 +109,14 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection string, route
 	router.HandleFunc("/mb/service-type", func(w http.ResponseWriter, r *http.Request) {
 		api.DeleteServiceType(client, dbName, os.Getenv("SERVICE_TYPE_COLLECTION"), w, r)
 	}).Methods("DELETE")
+
+	// Define route to get services by technician for mobile
+	router.HandleFunc("/mb/services/tech", func(w http.ResponseWriter, r *http.Request) {
+		api.GetServiceByTechnician(client, dbName, serviceCollection, w, r)
+	}).Methods("GET")
+
+	// Define route to get services by technician for backoffice
+	router.HandleFunc("/bo/services/tech", func(w http.ResponseWriter, r *http.Request) {
+		api.GetServiceByTechnician(client, dbName, serviceCollection, w, r)
+	}).Methods("GET")
 }
