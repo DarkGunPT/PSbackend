@@ -18,6 +18,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+func emailExists(email string, client *mongo.Client, dbName, userCollection string) bool {
+	// Check if the email exists in the database
+	collection := client.Database(dbName).Collection(userCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	var existingUser struct {
+		Email string `bson:"email"`
+	}
+	err := collection.FindOne(ctx, bson.M{"email": email}).Decode(&existingUser)
+	return err == nil
+}
+
 // VerificateEmail is responsible for sending an email with a verification code to the user's email address
 func VerificateEmail(w http.ResponseWriter, r *http.Request, mongo *mongo.Client, dbName, userCollection string) {
 	w.Header().Set("Content-Type", "application/json")
@@ -28,6 +41,11 @@ func VerificateEmail(w http.ResponseWriter, r *http.Request, mongo *mongo.Client
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
 	if err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if emailExists(requestBody.Email, mongo, dbName, userCollection) {
+		http.Error(w, "Email already registered", http.StatusConflict)
 		return
 	}
 
@@ -188,8 +206,11 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 	var user models.User
 
 	json.NewDecoder(r.Body).Decode(&user)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	if user.Email == "" {
+		http.Error(w, "Email is required for update", http.StatusBadRequest)
+		return
+	}
+
 	collection := client.Database(dbName).Collection(userCollection)
 	var updateFields bson.M = bson.M{}
 	if user.Name != "" {
@@ -198,11 +219,11 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 	if user.Password != "" {
 		updateFields["password"] = user.Password
 	}
+	if user.NIF != 0 {
+		updateFields["nif"] = user.NIF
+	}
 	if user.Phone != 0 {
 		updateFields["phone"] = user.Phone
-	}
-	if user.Email != "" {
-		updateFields["email"] = user.Email
 	}
 	if len(user.Role) > 0 {
 		updateFields["role"] = user.Role
@@ -213,27 +234,14 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 	if user.Locality != "" {
 		updateFields["locality"] = user.Locality
 	}
-	if user.Rating != 0 {
-		updateFields["rating"] = user.Rating
-	}
-	if user.BlockServices {
-		updateFields["block_services"] = user.BlockServices
-	}
-	if user.IsActive {
-		updateFields["is_active"] = user.IsActive
-	}
-	if !user.CreatedAt.IsZero() {
-		updateFields["created_at"] = user.CreatedAt
-	}
-	if user.RecoveryCode != 0 {
-		updateFields["recovery_code"] = user.RecoveryCode
-	}
 
 	if len(updateFields) == 0 {
 		http.Error(w, "No fields to update", http.StatusBadRequest)
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	result, err := collection.UpdateOne(ctx, bson.M{"email": user.Email}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -312,7 +320,7 @@ func Login(client *mongo.Client, dbName, userCollection string, w http.ResponseW
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("Login successful")
+	json.NewEncoder(w).Encode(user)
 }
 
 func LoginAdmin(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
