@@ -166,6 +166,14 @@ This repository contains the backend code for FixFinder, a platform designed to 
           "id": string
         }
         ```
+* **GET /mb/services/technicians:** Retrieves all services by technician for the Mobile App.
+* **GET /bo/services/technicians:** Retrieves all services by technician for the Back Office.
+    * Request body:
+        ```json
+        {
+          "employee_id": string
+        }
+        ```
 
 ## How to run
 
