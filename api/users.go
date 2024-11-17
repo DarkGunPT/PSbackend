@@ -31,6 +31,68 @@ func emailExists(email string, client *mongo.Client, dbName, userCollection stri
 	return err == nil
 }
 
+// RecoveryEmail is responsible for sending an recovery email with a verification code to the user's email address
+func RecoveryEmail(w http.ResponseWriter, r *http.Request, mongo *mongo.Client, dbName, userCollection string) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		Email string `json:"email"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if !emailExists(requestBody.Email, mongo, dbName, userCollection) {
+		http.Error(w, "Email isn't registered", http.StatusConflict)
+		return
+	}
+
+	code := rand.Intn(8999) + 1000
+
+	collection := mongo.Database(dbName).Collection(userCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	result, err := collection.UpdateOne(ctx, bson.M{"email": requestBody.Email}, bson.M{"$set": bson.M{"recovery_code": code}}, options.Update().SetUpsert(true))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if result.ModifiedCount == 0 && result.UpsertedID == nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	from := mail.NewEmail("FixFinder", os.Getenv("FIXFINDER_EMAIL"))
+	to := mail.NewEmail("Nuno Honório", requestBody.Email)
+	subject := fmt.Sprintf("Email Validation of FixFinder Code: %d", code)
+	plainTextContent := "Making it easier to find technicians for certain domestic services​"
+	htmlContent := "<strong>Making it easier to find technicians for certain domestic services​</strong>"
+	message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
+	client := sendgrid.NewSendClient(os.Getenv("SENDGRID_APIKEY"))
+	response, err := client.Send(message)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if response.StatusCode >= 400 {
+		http.Error(w, fmt.Sprintf("Failed to send email, status code: %d", response.StatusCode), http.StatusInternalServerError)
+		return
+	}
+
+	// Send the generated code back to the frontend in the response
+	jsonResponse := map[string]interface{}{
+		"message": "Verification email sent successfully",
+		"code":    code,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(jsonResponse)
+}
+
 // VerificateEmail is responsible for sending an email with a verification code to the user's email address
 func VerificateEmail(w http.ResponseWriter, r *http.Request, mongo *mongo.Client, dbName, userCollection string) {
 	w.Header().Set("Content-Type", "application/json")

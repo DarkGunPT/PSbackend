@@ -107,12 +107,12 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 
 	// Define route to send recovery email with a code to verify for mobile
 	router.HandleFunc("/mb/users/recovery", func(w http.ResponseWriter, r *http.Request) {
-		api.VerificateEmail(w, r, client, dbName, userCollection)
+		api.RecoveryEmail(w, r, client, dbName, userCollection)
 	}).Methods("POST")
 
 	// Define route to send recovery email with a code to verify for backoffice
 	router.HandleFunc("/bo/users/recovery", func(w http.ResponseWriter, r *http.Request) {
-		api.VerificateEmail(w, r, client, dbName, userCollection)
+		api.RecoveryEmail(w, r, client, dbName, userCollection)
 	}).Methods("POST")
 
 	// Define route to confirm the code set by the user and define the new password for mobile
