@@ -19,23 +19,19 @@ This repository contains the backend code for FixFinder, a platform designed to 
 
 ### Users
 
-* **POST /api/users:** Creates a new user.
+* **GET /api/v1/mb/users:** Retrieves all users for Mobile App.
+* **GET /api/v1/bo/users:** Retrieves all users for Back Office.
+
+* **GET /api/v1/mb/users/nif:** Retrieves a user by NIF for Mobile App.
+* **GET /api/v1/bo/users/nif:** Retrieves a user by NIF for Back Office.
     * Request body:
         ```json
         {
-          "email": string,
-          "password": string,
+          "nif": int
         }
         ```
-* **GET /api/users:** Retrieves all users.
-* **GET /api/users/phone:** Retrieves a user by phone number.
-    * Request body:
-        ```json
-        {
-          "phone": int
-        }
-        ```
-* **PUT /api/users:** Updates an existing user.
+* **PUT /api/v1/mb/users:** Updates a user for Mobile App.
+* **PUT /api/v1/bo/users:** Updates a user for Back Office.
     * Request body:
         ```json
         {
@@ -49,14 +45,16 @@ This repository contains the backend code for FixFinder, a platform designed to 
           "serviceTypes": [string]
         }
         ```
-* **DELETE /api/users:** Deletes a user by NIF.
+* **DELETE /api/v1/mb/users:** Deletes a user by NIF for Mobile App.
+* **DELETE /api/v1/bo/users:** Deletes a user by NIF for Back Office.
     * Request body:
         ```json
         {
           "nif": int
         }
         ```
-* **POST /api/users/login:** Logs in a user.
+* **POST /api/v1/mb/users/login:** User login for Mobile App.
+* **POST /api/v1/bo/users/login:** Admin login for Back Office.
     * Request body:
         ```json
         {
@@ -64,31 +62,28 @@ This repository contains the backend code for FixFinder, a platform designed to 
           "password": string
         }
         ```
-* **POST /api/bo/users/login:** Logs in an admin user (for back-office).
-    * Request body:
-        ```json
-        {
-          "email": string,
-          "password": string
-        }
-        ```
-* **POST /api/users/role:** Creates a new user role.
+* **POST /api/v1/bo/users/role:** Creates a new role for Back Office.
     * Request body:
         ```json
         {
           "name": string
         }
         ```
-* **GET /api/users/technicians:** Retrieves all technicians.
-* **GET /api/users/clients:** Retrieves all clients.
-* **POST /api/mb/users/email:** Sends a verification code to the user's email for recovery (mobile users).
+* **GET /api/v1/mb/users/technicians:** Retrieves all technicians for Mobile App.
+* **GET /api/v1/bo/users/technicians:** Retrieves all technicians for Back Office.
+* **GET /api/v1/mb/users/clients:** Retrieves all clients for Mobile App.
+* **GET /api/v1/bo/users/clients:** Retrieves all clients for Back Office.
+
+* **POST /api/v1/mb/users/email:** Sends an email with a code to verify for Mobile App.
+* **POST /api/v1/bo/users/email:** Sends an email with a code to verify for Back Office.
     * Request body:
         ```json
         {
           "email": string
         }
         ```
-* **POST /api/users/email-confirmation:** Confirms an authentication code for user recovery.
+* **POST /api/v1/mb/users/email-confirmation:** Confirms the code and sets a new password for Mobile App.
+* **POST /api/v1/bo/users/email-confirmation:** Confirms the code and sets a new password for Back Office.recovery.
     * Request body:
         ```json
         {
@@ -97,11 +92,42 @@ This repository contains the backend code for FixFinder, a platform designed to 
           "password": string
         }
         ```
+* **POST /api/v1/mb/users/recovery:** Sends a recovery email with a code to verify for Mobile App.
+* **POST /api/v1/bo/users/recovery:** Sends a recovery email with a code to verify for Back Office.
+    * Request body:
+        ```json
+        {
+          "email": string,
+        }
+        ```
+* **POST /api/v1/mb/users/recovery-confirmation:** Confirms the recovery code and sets a new password for Mobile App.
+* **POST /api/v1/bo/users/recovery-confirmation:** Confirms the recovery code and sets a new password for Back Office.
+    * Request body:
+        ```json
+        {
+          "email": string,
+          "code": int,
+          "password": string
+        }
+        ```
+* **PUT /api/v1/mb/users/registration-confirmation:** Finishes the registration for Mobile App.
+    * Request body:
+      ```json
+      {
+        "name": string,
+        "nif": int,
+        "phone": int,
+        "role": [string],
+        "service_types": [string],
+        "locality": string,
+        "is_active": bool
+      }
+      ```
 
 ### Services
 
-* **POST /bo/services:** Creates a new service for Back Office.
-* **POST /mb/services:** Creates a new service for Mobile App.
+* **POST /api/v1/bo/services:** Creates a new service for Back Office.
+* **POST /api/v1/mb/services:** Creates a new service for Mobile App.
     * Request body:
         ```json
         {
@@ -111,27 +137,27 @@ This repository contains the backend code for FixFinder, a platform designed to 
           "description": string
         }
         ```
-* **GET /bo/services:** Retrieves all services for Back Office.
-* **GET /mb/services:** Retrieves all services for Mobile App.
+* **GET /api/v1/bo/services:** Retrieves all services for Back Office.
+* **GET /api/v1/mb/services:** Retrieves all services for Mobile App.
 
-* **GET /bo/services/id:** Retrieves a service by ID for Back Office.
-* **GET /mb/services/id:** Retrieves a service by ID for Mobile App.
+* **GET /api/v1/bo/services/id:** Retrieves a service by ID for Back Office.
+* **GET /api/v1/mb/services/id:** Retrieves a service by ID for Mobile App.
     * Request body:
         ```json
         {
           "id": string
         }
         ```
-* **GET /bo/services/service-type:** Retrieves all filtered services by type for the Back Office.
-* **GET /mb/services/service-type:** Retrieves all filtered services by type for the Mobile App.
+* **GET /api/v1/bo/services/service-type:** Retrieves all filtered services by type for the Back Office.
+* **GET /api/v1/mb/services/service-type:** Retrieves all filtered services by type for the Mobile App.
     * Request body:
         ```json
         {
           "service_type": string
         }
       ```
-* **PUT /bo/services:** Updates an existing service for Back Office.
-* **PUT /mb/services:** Updates an existing service for Mobile App.
+* **PUT /api/v1/bo/services:** Updates an existing service for Back Office.
+* **PUT /api/v1/mb/services:** Updates an existing service for Mobile App.
     * Request body:
         ```json
         {
@@ -142,16 +168,16 @@ This repository contains the backend code for FixFinder, a platform designed to 
           "description": string
         }
         ```
-* **POST /bo/service-type:** Creates a new service type for Back Office.
+* **POST /api/v1/bo/service-type:** Creates a new service type for Back Office.
     * Request body:
         ```json
         {
           "name": string
         }
         ```
-* **GET /bo/service-type:** Retrieves all service types for Back Office.
-* **GET /mb/service-type:** Retrieves all service types for Mobile App.
-* **PUT /bo/service-type:** Updates an existing service type for Back Office.
+* **GET /api/v1/bo/service-type:** Retrieves all service types for Back Office.
+* **GET /api/v1/mb/service-type:** Retrieves all service types for Mobile App.
+* **PUT /api/v1/bo/service-type:** Updates an existing service type for Back Office.
     * Request body:
         ```json
         {
@@ -159,15 +185,15 @@ This repository contains the backend code for FixFinder, a platform designed to 
           "name": string
         }
         ```
-* **DELETE /bo/service-type:** Deletes a service type by ID for Back Office.
+* **DELETE /api/v1/bo/service-type:** Deletes a service type by ID for Back Office.
     * Request body:
         ```json
         {
           "id": string
         }
         ```
-* **GET /mb/services/technicians:** Retrieves all services by technician for the Mobile App.
-* **GET /bo/services/technicians:** Retrieves all services by technician for the Back Office.
+* **GET /api/v1/mb/services/technicians:** Retrieves all services by technician for the Mobile App.
+* **GET /api/v1/bo/services/technicians:** Retrieves all services by technician for the Back Office.
     * Request body:
         ```json
         {
