@@ -125,39 +125,6 @@ func GetFilteredServiceType(client *mongo.Client, dbName, serviceCollection stri
 	json.NewEncoder(w).Encode(services)
 }
 
-// DeleteService handles DELETE request to delete a specific service
-func DeleteService(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	var requestBody struct {
-		ID primitive.ObjectID `json:"id"`
-	}
-
-	err := json.NewDecoder(r.Body).Decode(&requestBody)
-	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	collection := client.Database(dbName).Collection(serviceCollection)
-
-	result, err := collection.DeleteOne(ctx, bson.M{"_id": requestBody.ID})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if result.DeletedCount == 0 {
-		http.Error(w, "Service not found", http.StatusNotFound)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("Service deleted successfully")
-}
-
 // UpdateService handles PUT request to update one specific service
 func UpdateService(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

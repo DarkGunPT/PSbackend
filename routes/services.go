@@ -41,24 +41,14 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection string, route
 	}).Methods("GET")
 
 	// Define route for getting all filtered services by type for Back Office
-	router.HandleFunc("/bo/services/type", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/bo/services/service-type", func(w http.ResponseWriter, r *http.Request) {
 		api.GetFilteredServiceType(client, dbName, serviceCollection, w, r)
 	}).Methods("GET")
 
 	// Define route for getting all filtered services by type for Mobile App
-	router.HandleFunc("/mb/services/type", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/mb/services/service-type", func(w http.ResponseWriter, r *http.Request) {
 		api.GetFilteredServiceType(client, dbName, serviceCollection, w, r)
 	}).Methods("GET")
-
-	// Define route to delete a service by id for Back Office
-	router.HandleFunc("/bo/services", func(w http.ResponseWriter, r *http.Request) {
-		api.DeleteService(client, dbName, serviceCollection, w, r)
-	}).Methods("DELETE")
-
-	// Define route to delete a service by id for Mobile App
-	router.HandleFunc("/mb/services", func(w http.ResponseWriter, r *http.Request) {
-		api.DeleteService(client, dbName, serviceCollection, w, r)
-	}).Methods("DELETE")
 
 	// Define route to update a service for Back Office
 	router.HandleFunc("/bo/services", func(w http.ResponseWriter, r *http.Request) {
@@ -72,11 +62,6 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection string, route
 
 	// Define route for creating a new specific service type for Back Office
 	router.HandleFunc("/bo/service-type", func(w http.ResponseWriter, r *http.Request) {
-		api.CreateServiceType(client, dbName, os.Getenv("SERVICE_TYPE_COLLECTION"), w, r)
-	}).Methods("POST")
-
-	// Define route for creating a new specific service type for Mobile App
-	router.HandleFunc("/mb/service-type", func(w http.ResponseWriter, r *http.Request) {
 		api.CreateServiceType(client, dbName, os.Getenv("SERVICE_TYPE_COLLECTION"), w, r)
 	}).Methods("POST")
 
@@ -95,28 +80,18 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection string, route
 		api.UpdateServiceType(client, dbName, os.Getenv("SERVICE_TYPE_COLLECTION"), w, r)
 	}).Methods("PUT")
 
-	// Define route to update a service type for Mobile App
-	router.HandleFunc("/mb/service-type", func(w http.ResponseWriter, r *http.Request) {
-		api.UpdateServiceType(client, dbName, os.Getenv("SERVICE_TYPE_COLLECTION"), w, r)
-	}).Methods("PUT")
-
 	// Define route to delete a service type by id for Back Office
 	router.HandleFunc("/bo/service-type", func(w http.ResponseWriter, r *http.Request) {
 		api.DeleteServiceType(client, dbName, os.Getenv("SERVICE_TYPE_COLLECTION"), w, r)
 	}).Methods("DELETE")
 
-	// Define route to delete a service type by id for Mobile App
-	router.HandleFunc("/mb/service-type", func(w http.ResponseWriter, r *http.Request) {
-		api.DeleteServiceType(client, dbName, os.Getenv("SERVICE_TYPE_COLLECTION"), w, r)
-	}).Methods("DELETE")
-
 	// Define route to get services by technician for mobile
-	router.HandleFunc("/mb/services/tech", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/mb/services/technicians", func(w http.ResponseWriter, r *http.Request) {
 		api.GetServiceByTechnician(client, dbName, serviceCollection, w, r)
 	}).Methods("GET")
 
-	// Define route to get services by technician for backoffice
-	router.HandleFunc("/bo/services/tech", func(w http.ResponseWriter, r *http.Request) {
+	// Define route to get services by technician for Back Office
+	router.HandleFunc("/bo/services/technicians", func(w http.ResponseWriter, r *http.Request) {
 		api.GetServiceByTechnician(client, dbName, serviceCollection, w, r)
 	}).Methods("GET")
 }

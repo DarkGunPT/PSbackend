@@ -122,22 +122,14 @@ This repository contains the backend code for FixFinder, a platform designed to 
           "id": string
         }
         ```
-* **GET /bo/services/type:** Retrieves all filtered services by type for Back Office.
-* **GET /mb/services/type:** Retrieves all filtered services by type for Mobile App.
+* **GET /bo/services/service-type:** Retrieves all filtered services by type for the Back Office.
+* **GET /mb/services/service-type:** Retrieves all filtered services by type for the Mobile App.
     * Request body:
         ```json
         {
           "service_type": string
         }
-      ```      
-* **DELETE /bo/services:** Deletes a service by ID for Back Office.
-* **DELETE /mb/services:** Deletes a service by ID for Mobile App.
-    * Request body:
-        ```json
-        {
-          "id": string
-        }
-        ```
+      ```
 * **PUT /bo/services:** Updates an existing service for Back Office.
 * **PUT /mb/services:** Updates an existing service for Mobile App.
     * Request body:
@@ -151,7 +143,6 @@ This repository contains the backend code for FixFinder, a platform designed to 
         }
         ```
 * **POST /bo/service-type:** Creates a new service type for Back Office.
-* **POST /mb/service-type:** Creates a new service type for Mobile App.
     * Request body:
         ```json
         {
@@ -161,7 +152,6 @@ This repository contains the backend code for FixFinder, a platform designed to 
 * **GET /bo/service-type:** Retrieves all service types for Back Office.
 * **GET /mb/service-type:** Retrieves all service types for Mobile App.
 * **PUT /bo/service-type:** Updates an existing service type for Back Office.
-* **PUT /mb/service-type:** Updates an existing service type for Mobile App.
     * Request body:
         ```json
         {
@@ -170,11 +160,18 @@ This repository contains the backend code for FixFinder, a platform designed to 
         }
         ```
 * **DELETE /bo/service-type:** Deletes a service type by ID for Back Office.
-* **DELETE /mb/service-type:** Deletes a service type by ID for Mobile App.
     * Request body:
         ```json
         {
           "id": string
+        }
+        ```
+* **GET /mb/services/technicians:** Retrieves all services by technician for the Mobile App.
+* **GET /bo/services/technicians:** Retrieves all services by technician for the Back Office.
+    * Request body:
+        ```json
+        {
+          "employee_id": string
         }
         ```
 
