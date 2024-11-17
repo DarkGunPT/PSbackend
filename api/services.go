@@ -14,15 +14,42 @@ import (
 )
 
 // CreateService handles POST requests to create a new service
-func CreateService(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+func CreateService(client *mongo.Client, dbServiceName, serviceCollection, dbUserName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		ServiceType models.ServiceType `json:"service_type"`
+		Description string             `json:"description"`
+		Employee_id string             `json:"employee_id"`
+	}
 	var service models.Services
+	var technician models.User
 
-	json.NewDecoder(r.Body).Decode(&service)
-	service.ID = primitive.NewObjectID()
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
 
-	collection := client.Database(dbName).Collection(serviceCollection)
+	collection := client.Database(dbUserName).Collection(userCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	err = collection.FindOne(ctx, bson.M{"email": requestBody.Employee_id}).Decode(&technician)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	service.ID = primitive.NewObjectID()
+	service.Employee = technician
+	service.Description = requestBody.Description
+	service.ServiceType = requestBody.ServiceType
+
+	collection = client.Database(dbServiceName).Collection(serviceCollection)
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	result, err := collection.InsertOne(ctx, service)
 	if err != nil {

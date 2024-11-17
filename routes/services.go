@@ -9,15 +9,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func ServiceRoutes(client *mongo.Client, dbName, serviceCollection string, router *mux.Router) {
+func ServiceRoutes(client *mongo.Client, dbName, serviceCollection, dbUserName, userCollection string, router *mux.Router) {
 	// Define route for creating a new service for Back Office
 	router.HandleFunc("/api/v1/bo/services", func(w http.ResponseWriter, r *http.Request) {
-		api.CreateService(client, dbName, serviceCollection, w, r)
+		api.CreateService(client, dbName, serviceCollection, dbUserName, userCollection, w, r)
 	}).Methods("POST")
 
 	// Define route for creating a new service for Mobile App
 	router.HandleFunc("/api/v1/mb/services", func(w http.ResponseWriter, r *http.Request) {
-		api.CreateService(client, dbName, serviceCollection, w, r)
+		api.CreateService(client, dbName, serviceCollection, dbUserName, userCollection, w, r)
 	}).Methods("POST")
 
 	// Define route for getting all services for Back Office
