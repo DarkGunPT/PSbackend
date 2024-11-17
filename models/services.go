@@ -11,13 +11,13 @@ type Services struct {
 	EmployeeID  string             `json:"employee_id,omitempty" bson:"employee_id,omitempty"`
 	ServiceType ServiceType        `json:"service_type,omitempty" bson:"service_type,omitempty"`
 	Description string             `json:"description,omitempty" bson:"description,omitempty"`
-	Value       float64            `json:"value,omitempty" bson:"value,omitempty"`
 	Appointment []Appointment      `json:"appointments,omitempty" bson:"appointments,omitempty"`
 }
 
 type ServiceType struct {
-	ID   primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	Name string             `json:"name,omitempty" bson:"name,omitempty"`
+	ID    primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Name  string             `json:"name,omitempty" bson:"name,omitempty"`
+	Price float64            `json:"price,omitempty" bson:"value,omitempty"`
 }
 
 type Appointment struct {

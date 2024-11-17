@@ -8,19 +8,19 @@ import (
 
 type User struct {
 	ID            primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	Name          string             `json:"name,omitempty" bson:"name,omitempty"`
-	Password      string             `json:"password,omitempty" bson:"password,omitempty"`
-	NIF           int64              `json:"nif,omitempty" bson:"nif,omitempty"`
-	Phone         int64              `json:"phone,omitempty" bson:"phone,omitempty"`
-	Email         string             `json:"email,omitempty" bson:"email,omitempty"`
-	Role          []Role             `json:"role,omitempty" bson:"role,omitempty"`
-	ServiceTypes  []ServiceType      `json:"service_types,omitempty" bson:"service_types,omitempty"`
-	Locality      string             `json:"locality,omitempty" bson:"locality,omitempty"`
-	Rating        float64            `json:"rating,omitempty" bson:"rating,omitempty"`
-	BlockServices bool               `json:"block_services,omitempty" bson:"block_services,omitempty"`
-	IsActive      bool               `json:"is_active,omitempty" bson:"is_active,omitempty"`
-	CreatedAt     time.Time          `json:"created_at,omitempty" bson:"created_at,omitempty"`
-	RecoveryCode  int                `json:"recovery_code,omitempty" bson:"recovery_code,omitempty"`
+	Name          string             `json:"name" bson:"name"`
+	Password      string             `json:"password" bson:"password"`
+	NIF           int                `json:"nif" bson:"nif"`
+	Phone         int                `json:"phone" bson:"phone"`
+	Email         string             `json:"email" bson:"email"`
+	Role          []Role             `json:"role" bson:"role"`
+	ServiceTypes  []ServiceType      `json:"service_types" bson:"service_types"`
+	Locality      string             `json:"locality" bson:"locality"`
+	Rating        float64            `json:"rating" bson:"rating"`
+	BlockServices bool               `json:"block_services" bson:"block_services"`
+	IsActive      bool               `json:"is_active" bson:"is_active"`
+	CreatedAt     time.Time          `json:"created_at" bson:"created_at"`
+	RecoveryCode  int                `json:"recovery_code" bson:"recovery_code"`
 }
 
 type Role struct {

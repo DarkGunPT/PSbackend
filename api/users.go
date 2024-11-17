@@ -113,10 +113,26 @@ func VerificateEmail(w http.ResponseWriter, r *http.Request, mongo *mongo.Client
 
 	code := rand.Intn(8999) + 1000
 
+	defaultUser := models.User{
+		Name:          "", // Default name
+		Password:      "", // Default password
+		NIF:           0,
+		Phone:         0,
+		Email:         requestBody.Email, // Use email from the request
+		Role:          []models.Role{},
+		ServiceTypes:  []models.ServiceType{},
+		Locality:      "",
+		Rating:        0.0,
+		BlockServices: false,
+		IsActive:      false,
+		CreatedAt:     time.Now(), // Default to current timestamp
+		RecoveryCode:  code,
+	}
+
 	collection := mongo.Database(dbName).Collection(userCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	result, err := collection.UpdateOne(ctx, bson.M{"email": requestBody.Email}, bson.M{"$set": bson.M{"recovery_code": code}}, options.Update().SetUpsert(true))
+	result, err := collection.UpdateOne(ctx, bson.M{"email": requestBody.Email}, bson.M{"$set": defaultUser}, options.Update().SetUpsert(true))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -509,4 +525,67 @@ func GetClients(client *mongo.Client, dbName, userCollection string, w http.Resp
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(users)
+}
+
+// UpdateUser handles PUT request to update one specific user
+func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var user models.User
+
+	json.NewDecoder(r.Body).Decode(&user)
+	if user.Email == "" {
+		http.Error(w, "Email is required for update", http.StatusBadRequest)
+		return
+	}
+
+	collection := client.Database(dbName).Collection(userCollection)
+	if user.Name == "" {
+		http.Error(w, "Name is required for registration", http.StatusBadRequest)
+		return
+	}
+	if user.NIF == 0 {
+		http.Error(w, "NIF is required for registration", http.StatusBadRequest)
+		return
+	}
+	if user.Phone == 0 {
+		http.Error(w, "Phone is required for registration", http.StatusBadRequest)
+		return
+	}
+	if len(user.Role) == 0 {
+		http.Error(w, "Role is required for registration", http.StatusBadRequest)
+		return
+	}
+	if len(user.ServiceTypes) == 0 {
+		http.Error(w, "ServiceType is required for registration", http.StatusBadRequest)
+		return
+	}
+	if user.Locality == "" {
+		http.Error(w, "Locality is required for registration", http.StatusBadRequest)
+		return
+	}
+
+	var updateFields bson.M = bson.M{}
+	updateFields["name"] = user.Name
+	updateFields["nif"] = user.NIF
+	updateFields["phone"] = user.Phone
+	updateFields["role"] = user.Role
+	updateFields["service_types"] = user.ServiceTypes
+	updateFields["locality"] = user.Locality
+	updateFields["is_active"] = true
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	result, err := collection.UpdateOne(ctx, bson.M{"email": user.Email}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if result.ModifiedCount == 0 {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("User updated successfully")
 }
