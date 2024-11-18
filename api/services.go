@@ -346,3 +346,29 @@ func GetServiceByTechnician(client *mongo.Client, dbName, serviceCollection stri
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(services)
 }
+
+// GetAppointments handles GET requests to get the list of appointments
+func GetAppointments(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var appointments []models.Appointment
+
+	collection := client.Database(dbName).Collection(serviceCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var service models.Services
+		cursor.Decode(&service)
+		appointments = append(appointments, service.Appointment...)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(appointments)
+}
