@@ -200,6 +200,7 @@ This repository contains the backend code for FixFinder, a platform designed to 
           "employee_id": string
         }
         ```
+* **GET /api/v1/bo/services/appointments:** Retrieves all appointments for Back Office
 
 ## How to run
 
