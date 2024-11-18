@@ -40,12 +40,12 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 		api.UpdateUser(client, dbName, userCollection, w, r)
 	}).Methods("PUT")
 
-	// Define route to delete a user by phone for mobile
+	// Define route to delete a user by nif for mobile
 	router.HandleFunc("/api/v1/mb/users", func(w http.ResponseWriter, r *http.Request) {
 		api.DeleteUser(client, dbName, userCollection, w, r)
 	}).Methods("DELETE")
 
-	// Define route to delete a user by phone for backoffice
+	// Define route to delete a user by nif for backoffice
 	router.HandleFunc("/api/v1/bo/users", func(w http.ResponseWriter, r *http.Request) {
 		api.DeleteUser(client, dbName, userCollection, w, r)
 	}).Methods("DELETE")
