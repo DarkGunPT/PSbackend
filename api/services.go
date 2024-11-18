@@ -346,3 +346,68 @@ func GetServiceByTechnician(client *mongo.Client, dbName, serviceCollection stri
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(services)
 }
+
+func InsertAppointment(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		ID         primitive.ObjectID `json:"id"`
+		EmployerID string             `json:"employer_id"`
+		Start      string             `json:"start"`
+		End        string             `json:"end"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var service models.Services
+	collection := client.Database(dbName).Collection(serviceCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	err = collection.FindOne(ctx, bson.M{"_id": requestBody.ID}).Decode(&service)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "Service not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	start, err := time.Parse("2006-01-02T15:04:05.999-07:00", requestBody.Start)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	end, err := time.Parse("2006-01-02T15:04:05.999-07:00", requestBody.End)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	service.Appointment = append(service.Appointment, models.Appointment{
+		ID:         primitive.NewObjectID(),
+		EmployeeID: service.Employee.ID.Hex(),
+		EmployerID: requestBody.EmployerID,
+		Status:     "CREATED",
+		Start:      start,
+		End:        end,
+	})
+
+	result, err := collection.UpdateOne(ctx, bson.M{"_id": service.ID}, bson.M{"$set": service}, options.Update().SetUpsert(true))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if result.ModifiedCount == 0 {
+		http.Error(w, "Service not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("Service appointments updated successfully")
+}
