@@ -21,7 +21,7 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 	}).Methods("GET")
 
 	// Define route to get a user by nif  for mobile
-	router.HandleFunc("/api/v1/mb/users/nif", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/mb/users/{nif}", func(w http.ResponseWriter, r *http.Request) {
 		api.GetUser(client, dbName, userCollection, w, r)
 	}).Methods("GET")
 

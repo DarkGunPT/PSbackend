@@ -8,8 +8,10 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"go.mongodb.org/mongo-driver/bson"
@@ -247,16 +249,20 @@ func GetUsers(client *mongo.Client, dbName, userCollection string, w http.Respon
 	json.NewEncoder(w).Encode(users)
 }
 
-// GetUser handles GET requests to get one specific user
+// GetUser handles GET requests to get one specific user by NIF
 func GetUser(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var requestBody struct {
-		NIF int64 `json:"nif"`
+
+	vars := mux.Vars(r)
+	nifStr, exists := vars["nif"]
+	if !exists {
+		http.Error(w, "NIF is required", http.StatusBadRequest)
+		return
 	}
 
-	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	nif, err := strconv.ParseInt(nifStr, 10, 64)
 	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		http.Error(w, "Invalid NIF format", http.StatusBadRequest)
 		return
 	}
 
@@ -264,7 +270,8 @@ func GetUser(client *mongo.Client, dbName, userCollection string, w http.Respons
 	collection := client.Database(dbName).Collection(userCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	err = collection.FindOne(ctx, bson.M{"nif": requestBody.NIF}).Decode(&user)
+
+	err = collection.FindOne(ctx, bson.M{"nif": nif}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			http.Error(w, "User not found", http.StatusNotFound)

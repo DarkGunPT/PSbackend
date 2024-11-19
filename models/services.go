@@ -27,6 +27,10 @@ type Appointment struct {
 	Status     string             `json:"status,omitempty" bson:"status,omitempty"`
 	Start      time.Time          `json:"start,omitempty" bson:"start,omitempty"`
 	End        time.Time          `json:"end,omitempty" bson:"end,omitempty"`
+	Addres     string
+	Phone      int
+	NIF        int
+	Info       string
 }
 
 type Review struct {
