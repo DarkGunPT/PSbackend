@@ -213,13 +213,13 @@ func ConfirmAuthCode(client *mongo.Client, dbName, userCollection string, w http
 		return
 	}
 
-	if result.ModifiedCount == 0 && result.UpsertedID == nil {
+	if result.ModifiedCount == 0 {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode("Password reseted successfully")
 }
 
 // GetUsers handles GET requests to get the list of users

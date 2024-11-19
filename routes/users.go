@@ -86,22 +86,22 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 	}).Methods("GET")
 
 	// Define route to send email with a code to verify for mobile
-	router.HandleFunc("/api/v1/mb/users/email", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/mb/users/register", func(w http.ResponseWriter, r *http.Request) {
 		api.VerificateEmail(w, r, client, dbName, userCollection)
 	}).Methods("POST")
 
 	// Define route to send email with a code to verify for backoffice
-	router.HandleFunc("/api/v1/bo/users/email", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/bo/users/register", func(w http.ResponseWriter, r *http.Request) {
 		api.VerificateEmail(w, r, client, dbName, userCollection)
 	}).Methods("POST")
 
 	// Define route to confirm the code set by the user and define the new password for mobile
-	router.HandleFunc("/api/v1/mb/users/email-confirmation", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/mb/users/register-confirmation", func(w http.ResponseWriter, r *http.Request) {
 		api.ConfirmAuthCode(client, dbName, userCollection, w, r)
 	}).Methods("POST")
 
 	// Define route to confirm the code set by the user and define the new password for backoffice
-	router.HandleFunc("/api/v1/bo/users/email-confirmation", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/bo/users/register-confirmation", func(w http.ResponseWriter, r *http.Request) {
 		api.ConfirmAuthCode(client, dbName, userCollection, w, r)
 	}).Methods("POST")
 
@@ -126,7 +126,7 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 	}).Methods("POST")
 
 	// Define route to finish the registration for mobile
-	router.HandleFunc("/api/v1/mb/users/registration-confirmation", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/mb/users/register-completion", func(w http.ResponseWriter, r *http.Request) {
 		api.RegisterCompletion(client, dbName, userCollection, w, r)
 	}).Methods("PUT")
 }
