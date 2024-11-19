@@ -99,4 +99,9 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection, dbUserName, 
 	router.HandleFunc("/api/v1/mb/services/appointment", func(w http.ResponseWriter, r *http.Request) {
 		api.InsertAppointment(client, dbName, serviceCollection, w, r)
 	}).Methods("PUT")
+
+	// Define route to get appointments for Back Office
+	router.HandleFunc("/api/v1/bo/services/appointments", func(w http.ResponseWriter, r *http.Request) {
+		api.GetAppointments(client, dbName, serviceCollection, w, r)
+	}).Methods("GET")
 }
