@@ -488,6 +488,7 @@ func GetTechnicians(client *mongo.Client, dbName, userCollection string, w http.
 	}
 	defer cursor.Close(ctx)
 
+	// /api/v1/mb/users/technicians -> retornar apenas timestamps que estão ocupados
 	var users []models.User
 	for cursor.Next(ctx) {
 		var user models.User

@@ -20,6 +20,16 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 		api.GetUsers(client, dbName, userCollection, w, r)
 	}).Methods("GET")
 
+	// Define route to get technicians for mobile
+	router.HandleFunc("/api/v1/mb/users/technicians", func(w http.ResponseWriter, r *http.Request) {
+		api.GetTechnicians(client, dbName, userCollection, w, r)
+	}).Methods("GET")
+
+	// Define route to get technicians for backoffice
+	router.HandleFunc("/api/v1/bo/users/technicians", func(w http.ResponseWriter, r *http.Request) {
+		api.GetTechnicians(client, dbName, userCollection, w, r)
+	}).Methods("GET")
+
 	// Define route to get a user by nif  for mobile
 	router.HandleFunc("/api/v1/mb/users/{nif}", func(w http.ResponseWriter, r *http.Request) {
 		api.GetUser(client, dbName, userCollection, w, r)
@@ -64,16 +74,6 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 	router.HandleFunc("/api/v1/bo/users/role", func(w http.ResponseWriter, r *http.Request) {
 		api.CreateRole(client, dbName, os.Getenv("ROLES_COLLECTION"), w, r)
 	}).Methods("POST")
-
-	// Define route to get technicians for mobile
-	router.HandleFunc("/api/v1/mb/users/technicians", func(w http.ResponseWriter, r *http.Request) {
-		api.GetTechnicians(client, dbName, userCollection, w, r)
-	}).Methods("GET")
-
-	// Define route to get technicians for backoffice
-	router.HandleFunc("/api/v1/bo/users/technicians", func(w http.ResponseWriter, r *http.Request) {
-		api.GetTechnicians(client, dbName, userCollection, w, r)
-	}).Methods("GET")
 
 	// Define route to get clients for mobile
 	router.HandleFunc("/api/v1/mb/users/clients", func(w http.ResponseWriter, r *http.Request) {
