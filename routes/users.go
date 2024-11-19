@@ -30,11 +30,6 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 		api.GetTechnicians(client, dbName, userCollection, w, r)
 	}).Methods("GET")
 
-	// Define route to get a user by nif  for mobile
-	router.HandleFunc("/api/v1/mb/users/{nif}", func(w http.ResponseWriter, r *http.Request) {
-		api.GetUser(client, dbName, userCollection, w, r)
-	}).Methods("GET")
-
 	// Define route to get a user by nif for backoffice
 	router.HandleFunc("/api/v1/bo/users/nif", func(w http.ResponseWriter, r *http.Request) {
 		api.GetUser(client, dbName, userCollection, w, r)
@@ -129,4 +124,9 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 	router.HandleFunc("/api/v1/mb/users/register-completion", func(w http.ResponseWriter, r *http.Request) {
 		api.RegisterCompletion(client, dbName, userCollection, w, r)
 	}).Methods("PUT")
+
+	// Define route to get a user by nif  for mobile
+	router.HandleFunc("/api/v1/mb/users/{nif}", func(w http.ResponseWriter, r *http.Request) {
+		api.GetUser(client, dbName, userCollection, w, r)
+	}).Methods("GET")
 }
