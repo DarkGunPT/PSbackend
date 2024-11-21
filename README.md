@@ -200,6 +200,16 @@ This repository contains the backend code for FixFinder, a platform designed to 
           "employee_id": string
         }
         ```
+* **PUT /api/v1/mb/services/appointment** Update service with a new appointment for Mobile
+* Request body:
+    ```json
+    {
+      "id": string,
+      "employee_id": string,
+      "start": string,
+      "end": string
+    }
+    ```
 * **GET /api/v1/bo/services/appointments:** Retrieves all appointments for Back Office
 
 ## How to run
