@@ -437,3 +437,31 @@ func GetAppointments(client *mongo.Client, dbName, serviceCollection string, w h
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(appointments)
 }
+
+// GetAppointmentsByService handles GET requests to get the list of appointments
+func GetAppointmentsByService(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var filter struct {
+		ID primitive.ObjectID `json:"id"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&filter)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	collection := client.Database(dbName).Collection(serviceCollection)
+
+	// Find the service document
+	var service models.Services
+	err = collection.FindOne(context.TODO(), bson.M{"_id": filter.ID}).Decode(&service)
+	if err != nil {
+		http.Error(w, "Error fetching service", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(service.Appointment)
+}
