@@ -437,3 +437,47 @@ func GetAppointments(client *mongo.Client, dbName, serviceCollection string, w h
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(appointments)
 }
+
+// GetUpcomingAppointments handles GET requests to get the list of the upcoming appointments for a technician
+func GetUpcomingAppointments(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var filter struct {
+		EmployeeID string `json:"employee_id"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&filter)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	collection := client.Database(dbName).Collection(serviceCollection)
+
+	// Find all services for the employee
+	cursor, err := collection.Find(context.TODO(), bson.M{"employee_id": filter.EmployeeID})
+	if err != nil {
+		http.Error(w, "Error fetching services", http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(context.TODO())
+
+	var upcomingAppointments []models.Appointment
+	for cursor.Next(context.TODO()) {
+		var service models.Services
+		err := cursor.Decode(&service)
+		if err != nil {
+			http.Error(w, "Error decoding service", http.StatusInternalServerError)
+			return
+		}
+
+		for _, appointment := range service.Appointment {
+			if appointment.Start.After(time.Now()) {
+				upcomingAppointments = append(upcomingAppointments, appointment)
+			}
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(upcomingAppointments)
+}

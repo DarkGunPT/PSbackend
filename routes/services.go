@@ -104,4 +104,9 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection, dbUserName, 
 	router.HandleFunc("/api/v1/bo/services/appointments", func(w http.ResponseWriter, r *http.Request) {
 		api.GetAppointments(client, dbName, serviceCollection, w, r)
 	}).Methods("GET")
+
+	// Define route to get upcoming appointments for mobile
+	router.HandleFunc("/api/v1/mb/services/appointments-upcoming", func(w http.ResponseWriter, r *http.Request) {
+		api.GetUpcomingAppointments(client, dbName, serviceCollection, w, r)
+	}).Methods("GET")
 }
