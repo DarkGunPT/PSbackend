@@ -9,15 +9,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func ServiceRoutes(client *mongo.Client, dbName, serviceCollection, dbUserName, userCollection string, router *mux.Router) {
+func ServiceRoutes(client *mongo.Client, dbName, serviceCollection, userCollection string, router *mux.Router) {
 	// Define route for creating a new service for Back Office
 	router.HandleFunc("/api/v1/bo/services", func(w http.ResponseWriter, r *http.Request) {
-		api.CreateService(client, dbName, serviceCollection, dbUserName, userCollection, w, r)
+		api.CreateService(client, dbName, serviceCollection, userCollection, w, r)
 	}).Methods("POST")
 
 	// Define route for creating a new service for Mobile App
 	router.HandleFunc("/api/v1/mb/services", func(w http.ResponseWriter, r *http.Request) {
-		api.CreateService(client, dbName, serviceCollection, dbUserName, userCollection, w, r)
+		api.CreateService(client, dbName, serviceCollection, userCollection, w, r)
 	}).Methods("POST")
 
 	// Define route for getting all services for Back Office
@@ -97,11 +97,11 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection, dbUserName, 
 
 	// Define route to update service with a new appointment for Mobile
 	router.HandleFunc("/api/v1/mb/services/appointment", func(w http.ResponseWriter, r *http.Request) {
-		api.InsertAppointment(client, dbName, serviceCollection, w, r)
-	}).Methods("PUT")
+		api.InsertAppointment(client, dbName, serviceCollection, userCollection, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
+	}).Methods("POST")
 
 	// Define route to get appointments for Back Office
 	router.HandleFunc("/api/v1/bo/services/appointments", func(w http.ResponseWriter, r *http.Request) {
-		api.GetAppointments(client, dbName, serviceCollection, w, r)
+		api.GetAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
 	}).Methods("GET")
 }

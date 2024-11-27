@@ -14,14 +14,15 @@ import (
 )
 
 // CreateService handles POST requests to create a new service
-func CreateService(client *mongo.Client, dbServiceName, serviceCollection, dbUserName, userCollection string, w http.ResponseWriter, r *http.Request) {
+func CreateService(client *mongo.Client, dbName, serviceCollection, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
-		ServiceType models.ServiceType `json:"service_type"`
-		Description string             `json:"description"`
-		Employee_id string             `json:"employee_id"`
+		Price float64 `json:"price"`
+		Name  string  `json:"name"`
+		Email string  `json:"email"`
 	}
-	var service models.Services
+
+	var service models.ServiceType
 	var technician models.User
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
@@ -30,10 +31,10 @@ func CreateService(client *mongo.Client, dbServiceName, serviceCollection, dbUse
 		return
 	}
 
-	collection := client.Database(dbUserName).Collection(userCollection)
+	collection := client.Database(dbName).Collection(userCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	err = collection.FindOne(ctx, bson.M{"email": requestBody.Employee_id}).Decode(&technician)
+	err = collection.FindOne(ctx, bson.M{"email": requestBody.Email}).Decode(&technician)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			http.Error(w, "User not found", http.StatusNotFound)
@@ -45,10 +46,10 @@ func CreateService(client *mongo.Client, dbServiceName, serviceCollection, dbUse
 
 	service.ID = primitive.NewObjectID()
 	service.Employee = technician
-	service.Description = requestBody.Description
-	service.ServiceType = requestBody.ServiceType
+	service.Name = requestBody.Name
+	service.Price = requestBody.Price
 
-	collection = client.Database(dbServiceName).Collection(serviceCollection)
+	collection = client.Database(dbName).Collection(serviceCollection)
 	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	result, err := collection.InsertOne(ctx, service)
@@ -62,7 +63,7 @@ func CreateService(client *mongo.Client, dbServiceName, serviceCollection, dbUse
 // GetServices handles GET requests to get the list of services
 func GetServices(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var services []models.Services
+	var services []models.ServiceType
 
 	collection := client.Database(dbName).Collection(serviceCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -75,7 +76,7 @@ func GetServices(client *mongo.Client, dbName, serviceCollection string, w http.
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		var service models.Services
+		var service models.ServiceType
 		cursor.Decode(&service)
 		services = append(services, service)
 	}
@@ -97,7 +98,7 @@ func GetService(client *mongo.Client, dbName, serviceCollection string, w http.R
 		return
 	}
 
-	var service models.Services
+	var service models.ServiceType
 	collection := client.Database(dbName).Collection(serviceCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -118,10 +119,10 @@ func GetService(client *mongo.Client, dbName, serviceCollection string, w http.R
 // GetServiceType handles GET requests to get the filtered list of services by type
 func GetFilteredServiceType(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var services []models.Services
+	var services []models.ServiceType
 
 	var filter struct {
-		ServiceType string `json:"service_type"`
+		ServiceType string `json:"name"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&filter)
@@ -134,7 +135,7 @@ func GetFilteredServiceType(client *mongo.Client, dbName, serviceCollection stri
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	cursor, err := collection.Find(ctx, bson.M{"service_type.name": filter.ServiceType})
+	cursor, err := collection.Find(ctx, bson.M{"name": filter.ServiceType})
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -143,7 +144,7 @@ func GetFilteredServiceType(client *mongo.Client, dbName, serviceCollection stri
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		var service models.Services
+		var service models.ServiceType
 		cursor.Decode(&service)
 		services = append(services, service)
 	}
@@ -155,21 +156,20 @@ func GetFilteredServiceType(client *mongo.Client, dbName, serviceCollection stri
 // UpdateService handles PUT request to update one specific service
 func UpdateService(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var service models.Services
+	var service models.ServiceType
 
 	json.NewDecoder(r.Body).Decode(&service)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	collection := client.Database(dbName).Collection(serviceCollection)
 	var updateFields bson.M = bson.M{}
-	if service.ServiceType != (models.ServiceType{}) {
-		updateFields["service_type"] = service.ServiceType
+
+	if service.Price != 0 {
+		updateFields["price"] = service.Price
 	}
-	if service.Description != "" {
-		updateFields["description"] = service.Description
-	}
-	if len(service.Appointment) > 0 {
-		updateFields["appointments"] = service.Appointment
+
+	if service.Name != "" {
+		updateFields["name"] = service.Name
 	}
 
 	if len(updateFields) == 0 {
@@ -311,7 +311,7 @@ func DeleteServiceType(client *mongo.Client, dbName, serviceTypeCollection strin
 // GetServiceByTechnician handles GET requests to get one specific service
 func GetServiceByTechnician(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var services []models.Services
+	var services []models.ServiceType
 
 	var filter struct {
 		EmployeeID string `json:"employee_id"`
@@ -338,7 +338,7 @@ func GetServiceByTechnician(client *mongo.Client, dbName, serviceCollection stri
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		var service models.Services
+		var service models.ServiceType
 		cursor.Decode(&service)
 		services = append(services, service)
 	}
@@ -347,13 +347,19 @@ func GetServiceByTechnician(client *mongo.Client, dbName, serviceCollection stri
 	json.NewEncoder(w).Encode(services)
 }
 
-func InsertAppointment(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userCollection, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
-		ID         primitive.ObjectID `json:"id"`
-		EmployerID string             `json:"employer_id"`
-		Start      string             `json:"start"`
-		End        string             `json:"end"`
+		ServiceID   primitive.ObjectID `json:"service_id"`
+		ClientEmail string             `json:"client_email"`
+		Start       string             `json:"start"`
+		End         string             `json:"end"`
+		Email       string             `json:"email"`
+		Phone       int                `json:"phone"`
+		NIF         int                `json:"nif"`
+		Locality    string             `json:"locality"`
+		Notes       string             `json:"notes"`
+		Price       float64            `json:"price"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
@@ -362,11 +368,26 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection string, w
 		return
 	}
 
-	var service models.Services
-	collection := client.Database(dbName).Collection(serviceCollection)
+	var cli models.User
+
+	collection := client.Database(dbName).Collection(userCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	err = collection.FindOne(ctx, bson.M{"_id": requestBody.ID}).Decode(&service)
+	err = collection.FindOne(ctx, bson.M{"email": requestBody.ClientEmail}).Decode(&cli)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var service models.ServiceType
+	collection = client.Database(dbName).Collection(serviceCollection)
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	err = collection.FindOne(ctx, bson.M{"_id": requestBody.ServiceID}).Decode(&service)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			http.Error(w, "Service not found", http.StatusNotFound)
@@ -388,36 +409,46 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection string, w
 		return
 	}
 
-	service.Appointment = append(service.Appointment, models.Appointment{
-		ID:         primitive.NewObjectID(),
-		EmployeeID: service.Employee.ID.Hex(),
-		EmployerID: requestBody.EmployerID,
-		Status:     "CREATED",
-		Start:      start,
-		End:        end,
-	})
+	appointment := models.Appointment{
+		ID:       primitive.NewObjectID(),
+		Service:  service,
+		Provider: service.Employee,
+		Client:   cli,
+		Status:   "CREATED",
+		Start:    start,
+		End:      end,
+		Email:    requestBody.Email,
+		Phone:    requestBody.Phone,
+		NIF:      requestBody.NIF,
+		Locality: requestBody.Locality,
+		Notes:    requestBody.Notes,
+		Price:    requestBody.Price,
+	}
 
-	result, err := collection.UpdateOne(ctx, bson.M{"_id": service.ID}, bson.M{"$set": service}, options.Update().SetUpsert(true))
+	collection = client.Database(dbName).Collection(appointmentCollection)
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	result, err := collection.InsertOne(ctx, appointment)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if result.ModifiedCount == 0 {
-		http.Error(w, "Service not found", http.StatusNotFound)
-		return
+	jsonResponse := map[string]interface{}{
+		"message": "Appointment created successfully",
+		"result":  result,
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("Service appointments updated successfully")
+	json.NewEncoder(w).Encode(jsonResponse)
 }
 
 // GetAppointments handles GET requests to get the list of appointments
-func GetAppointments(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+func GetAppointments(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var appointments []models.Appointment
 
-	collection := client.Database(dbName).Collection(serviceCollection)
+	collection := client.Database(dbName).Collection(appointmentCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -429,9 +460,9 @@ func GetAppointments(client *mongo.Client, dbName, serviceCollection string, w h
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		var service models.Services
-		cursor.Decode(&service)
-		appointments = append(appointments, service.Appointment...)
+		var appointment models.Appointment
+		cursor.Decode(&appointment)
+		appointments = append(appointments, appointment)
 	}
 
 	w.WriteHeader(http.StatusOK)

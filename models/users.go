@@ -35,5 +35,7 @@ type Fee struct {
 	Value    float64            `json:"value,omitempty" bson:"value,omitempty"`
 	JobsDone int64              `json:"jobs_done,omitempty" bson:"jobs_done,omitempty"`
 	Paid     bool               `json:"paid,omitempty" bson:"paid,omitempty"`
+	Month    string             `json:"month"`
+	Year     string             `json:"month"`
 	Date     time.Time          `json:"date,omitempty" bson:"date,omitempty"`
 }
