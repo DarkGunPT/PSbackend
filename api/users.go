@@ -581,6 +581,9 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 	} else {
 		updateFields["role"] = []models.Role{
 			{
+				Name: "CLIENT",
+			},
+			{
 				Name: "TECH",
 			},
 		}
