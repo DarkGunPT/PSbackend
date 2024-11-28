@@ -104,4 +104,45 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection, userCollecti
 	router.HandleFunc("/api/v1/bo/services/appointments", func(w http.ResponseWriter, r *http.Request) {
 		api.GetAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
 	}).Methods("GET")
+
+	// Define route to get all the upcomming appointments of a Technician
+	router.HandleFunc("/api/v1/bo/services/appointments/upcomming", func(w http.ResponseWriter, r *http.Request) {
+		api.GetUpcommingAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
+	}).Methods("GET")
+
+	// Define route to get all the upcomming appointments of a Client
+	router.HandleFunc("/api/v1/mb/services/appointments/upcomming/client", func(w http.ResponseWriter, r *http.Request) {
+		api.GetClientUpcommingAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
+	}).Methods("GET")
+
+	// Define route to get all the upcomming appointments of a Technician
+	router.HandleFunc("/api/v1/mb/services/appointments/upcomming/technician", func(w http.ResponseWriter, r *http.Request) {
+		api.GetTechUpcommingAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
+	}).Methods("GET")
+
+	// Define route to get history of appointments
+	router.HandleFunc("/api/v1/bo/services/appointments/history", func(w http.ResponseWriter, r *http.Request) {
+		api.GetHistoryAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
+	}).Methods("GET")
+
+	// Define route to get history of appointments of a Client
+	router.HandleFunc("/api/v1/mb/services/appointments/history/client", func(w http.ResponseWriter, r *http.Request) {
+		api.GetClientHistoryAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
+	}).Methods("GET")
+
+	// Define route to get history of appointments of a Tech
+	router.HandleFunc("/api/v1/mb/services/appointments/history/technician", func(w http.ResponseWriter, r *http.Request) {
+		api.GetTechHistoryAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
+	}).Methods("GET")
+
+	// Define route to get appointments in a price range
+	router.HandleFunc("/api/v1/mb/services/appointments/price", func(w http.ResponseWriter, r *http.Request) {
+		api.GetAppointmentsByPrice(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
+	}).Methods("GET")
+
+	// Define route to get appointments in a price range
+	router.HandleFunc("/api/v1/mb/services/appointments/{id}", func(w http.ResponseWriter, r *http.Request) {
+		api.DeleteAppointment(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
+	}).Methods("DELETE")
+
 }

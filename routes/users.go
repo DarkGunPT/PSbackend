@@ -40,9 +40,14 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 		api.UpdateUser(client, dbName, userCollection, w, r)
 	}).Methods("PUT")
 
-	// Define route to update a user for backoffice
-	router.HandleFunc("/api/v1/bo/users", func(w http.ResponseWriter, r *http.Request) {
-		api.UpdateUser(client, dbName, userCollection, w, r)
+	// Define route to change the isActive of a user
+	router.HandleFunc("/api/v1/bo/users/active", func(w http.ResponseWriter, r *http.Request) {
+		api.UpdateActive(client, dbName, userCollection, w, r)
+	}).Methods("PUT")
+
+	// Define route to change the BlockServices of a user
+	router.HandleFunc("/api/v1/bo/users/block", func(w http.ResponseWriter, r *http.Request) {
+		api.UpdateBlock(client, dbName, userCollection, w, r)
 	}).Methods("PUT")
 
 	// Define route to delete a user by nif for mobile
@@ -129,4 +134,24 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 	router.HandleFunc("/api/v1/mb/users/{nif}", func(w http.ResponseWriter, r *http.Request) {
 		api.GetUser(client, dbName, userCollection, w, r)
 	}).Methods("GET")
+
+	// Define route to get clients ordened by a filter
+	router.HandleFunc("/api/v1/bo/users/clients/order", func(w http.ResponseWriter, r *http.Request) {
+		api.OrderClients(client, dbName, userCollection, w, r)
+	}).Methods("GET")
+
+	// Define route to get technicians ordened by a filter
+	router.HandleFunc("/api/v1/bo/users/technicians/order", func(w http.ResponseWriter, r *http.Request) {
+		api.OrderTechnicians(client, dbName, userCollection, w, r)
+	}).Methods("GET")
+
+	// Define route to get fees of a technician
+	router.HandleFunc("/api/v1/mb/fees/{nif}", func(w http.ResponseWriter, r *http.Request) {
+		api.GetFees(client, dbName, os.Getenv("FEES_COLLECTION"), w, r)
+	}).Methods("GET")
+
+	// Define route to update the status of a fee to PAID
+	router.HandleFunc("/api/v1/mb/fees/{nif}", func(w http.ResponseWriter, r *http.Request) {
+		api.PayFee(client, dbName, os.Getenv("FEES_COLLECTION"), w, r)
+	}).Methods("PUT")
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -397,6 +398,21 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		return
 	}
 
+	var provider models.User
+
+	collection = client.Database(dbName).Collection(userCollection)
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	err = collection.FindOne(ctx, bson.M{"email": service.Employee.Email}).Decode(&provider)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	start, err := time.Parse("2006-01-02T15:04:05.999-07:00", requestBody.Start)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -434,6 +450,44 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		return
 	}
 
+	for _, role := range cli.Role {
+		if role.Name == "CLIENT" {
+			role.ServicesDone++
+		}
+	}
+
+	for _, role := range provider.Role {
+		if role.Name == "TECH" {
+			role.ServicesDone++
+		}
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	update, err := collection.UpdateOne(ctx, bson.M{"email": cli.Email}, bson.M{"$set": cli}, options.Update().SetUpsert(true))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if update.ModifiedCount == 0 {
+		http.Error(w, "Client not found", http.StatusNotFound)
+		return
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	update, err = collection.UpdateOne(ctx, bson.M{"email": provider.Email}, bson.M{"$set": provider}, options.Update().SetUpsert(true))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if update.ModifiedCount == 0 {
+		http.Error(w, "Provider not found", http.StatusNotFound)
+		return
+	}
+
 	jsonResponse := map[string]interface{}{
 		"message": "Appointment created successfully",
 		"result":  result,
@@ -467,4 +521,292 @@ func GetAppointments(client *mongo.Client, dbName, appointmentCollection string,
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(appointments)
+}
+
+// GetUpcommingAppointments handles GET requests to get the list of appointments
+func GetUpcommingAppointments(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var appointments []models.Appointment
+
+	collection := client.Database(dbName).Collection(appointmentCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var appointment models.Appointment
+		cursor.Decode(&appointment)
+
+		if appointment.Status == "CREATED" {
+			appointments = append(appointments, appointment)
+		}
+
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(appointments)
+}
+
+// GetClientUpcommingAppointments handles GET requests to get the list of upcomming appointments of a client
+func GetClientUpcommingAppointments(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		Email string `json:"email"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var appointments []models.Appointment
+
+	collection := client.Database(dbName).Collection(appointmentCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var appointment models.Appointment
+		cursor.Decode(&appointment)
+		if appointment.Client.Email == requestBody.Email && appointment.Status == "CREATED" {
+			appointments = append(appointments, appointment)
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(appointments)
+}
+
+// GetTechUpcommingAppointments handles GET requests to get the list of upcomming appointments of a tech
+func GetTechUpcommingAppointments(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		Email string `json:"email"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var appointments []models.Appointment
+
+	collection := client.Database(dbName).Collection(appointmentCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var appointment models.Appointment
+		cursor.Decode(&appointment)
+		if appointment.Provider.Email == requestBody.Email && appointment.Status == "CREATED" {
+			appointments = append(appointments, appointment)
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(appointments)
+}
+
+// GetClientHistoryAppointments handles GET requests to get the list of appointments of a client already CLOSED
+func GetClientHistoryAppointments(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		Email string `json:"email"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var appointments []models.Appointment
+
+	collection := client.Database(dbName).Collection(appointmentCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var appointment models.Appointment
+		cursor.Decode(&appointment)
+		if appointment.Provider.Email == requestBody.Email && appointment.Status == "CLOSED" || appointment.Status == "CANCEL" {
+			appointments = append(appointments, appointment)
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(appointments)
+}
+
+// GetTechHistoryAppointments handles GET requests to get the list of appointments of a tech already closed
+func GetTechHistoryAppointments(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		Email string `json:"email"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var appointments []models.Appointment
+
+	collection := client.Database(dbName).Collection(appointmentCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var appointment models.Appointment
+		cursor.Decode(&appointment)
+		if appointment.Client.Email == requestBody.Email && appointment.Status == "CLOSED" || appointment.Status == "CANCEL" {
+			appointments = append(appointments, appointment)
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(appointments)
+}
+
+// GetHistoryAppointments handles GET requests to get the list of appointments already CLOSED
+func GetHistoryAppointments(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var appointments []models.Appointment
+
+	collection := client.Database(dbName).Collection(appointmentCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var appointment models.Appointment
+		cursor.Decode(&appointment)
+
+		if appointment.Status == "CLOSED" || appointment.Status == "CANCEL" {
+			appointments = append(appointments, appointment)
+		}
+
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(appointments)
+}
+
+// GetHistoryAppointments handles GET requests to get the list of appointments already CLOSED
+func GetAppointmentsByPrice(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		ServiceType string  `json:"service_type"`
+		Max         float64 `json:"max"`
+		Min         float64 `json:"min"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var appointments []models.Appointment
+
+	collection := client.Database(dbName).Collection(appointmentCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var appointment models.Appointment
+		cursor.Decode(&appointment)
+
+		if appointment.Service.Name == requestBody.ServiceType && appointment.Price >= requestBody.Min && appointment.Price < requestBody.Min {
+			appointments = append(appointments, appointment)
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(appointments)
+}
+
+func DeleteAppointment(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	vars := mux.Vars(r)
+	id, exists := vars["id"]
+	if !exists {
+		http.Error(w, "ID is required", http.StatusBadRequest)
+		return
+	}
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+
+	collection := client.Database(dbName).Collection(appointmentCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	update := bson.M{"$set": bson.M{"status": "CANCEL"}}
+	result, err := collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if result.MatchedCount == 0 {
+		http.Error(w, "Appointment not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("Appointment canceled successfully")
 }

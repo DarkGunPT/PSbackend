@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"time"
 
@@ -488,7 +489,6 @@ func GetTechnicians(client *mongo.Client, dbName, userCollection string, w http.
 	}
 	defer cursor.Close(ctx)
 
-	// /api/v1/mb/users/technicians -> retornar apenas timestamps que estão ocupados
 	var users []models.User
 	for cursor.Next(ctx) {
 		var user models.User
@@ -563,10 +563,6 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 		http.Error(w, "Role is required for registration", http.StatusBadRequest)
 		return
 	}
-	if len(user.ServiceTypes) == 0 {
-		http.Error(w, "ServiceType is required for registration", http.StatusBadRequest)
-		return
-	}
 	if user.Locality == "" {
 		http.Error(w, "Locality is required for registration", http.StatusBadRequest)
 		return
@@ -576,7 +572,19 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 	updateFields["name"] = user.Name
 	updateFields["nif"] = user.NIF
 	updateFields["phone"] = user.Phone
-	updateFields["role"] = user.Role
+	if len(user.ServiceTypes) == 0 {
+		updateFields["role"] = []models.Role{
+			{
+				Name: "CLIENT",
+			},
+		}
+	} else {
+		updateFields["role"] = []models.Role{
+			{
+				Name: "TECH",
+			},
+		}
+	}
 	updateFields["service_types"] = user.ServiceTypes
 	updateFields["locality"] = user.Locality
 	updateFields["is_active"] = true
@@ -596,4 +604,315 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("User updated successfully")
+}
+
+func UpdateBlock(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		Email string `json:"email"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+
+	collection := client.Database(dbName).Collection(userCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	err = collection.FindOne(ctx, bson.M{"email": requestBody.Email}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !user.BlockServices {
+		user.BlockServices = true
+	} else {
+		user.BlockServices = false
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	result, err := collection.UpdateOne(ctx, bson.M{"email": user.Email}, bson.M{"$set": user}, options.Update().SetUpsert(true))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if result.ModifiedCount == 0 {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("User updated successfully")
+
+}
+
+func UpdateActive(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		Email string `json:"email"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+
+	collection := client.Database(dbName).Collection(userCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	err = collection.FindOne(ctx, bson.M{"email": requestBody.Email}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !user.IsActive {
+		user.IsActive = true
+	} else {
+		user.IsActive = false
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	result, err := collection.UpdateOne(ctx, bson.M{"email": user.Email}, bson.M{"$set": user}, options.Update().SetUpsert(true))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if result.ModifiedCount == 0 {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("User updated successfully")
+
+}
+
+// GetTechnicians handles GET requests to get the list of technicians
+func OrderTechnicians(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		Filter string `json:"filter"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	collection := client.Database(dbName).Collection(userCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var users []models.User
+	for cursor.Next(ctx) {
+		var user models.User
+
+		cursor.Decode(&user)
+		for _, role := range user.Role {
+			if role.Name == "TECH" {
+				users = append(users, user)
+			}
+		}
+	}
+
+	if requestBody.Filter == "rating" {
+		sort.Slice(users, func(i, j int) bool {
+			return users[i].Rating > users[j].Rating
+		})
+	}
+	if requestBody.Filter == "services" {
+		sort.Slice(users, func(i, j int) bool {
+			var servicesDoneI, servicesDoneJ int
+
+			for _, role := range users[i].Role {
+				if role.Name == "TECH" {
+					servicesDoneI = role.ServicesDone
+					break
+				}
+			}
+
+			for _, role := range users[j].Role {
+				if role.Name == "TECH" {
+					servicesDoneJ = role.ServicesDone
+					break
+				}
+			}
+
+			return servicesDoneI > servicesDoneJ
+		})
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(users)
+}
+
+// GetClients handles GET requests to get the list of clients
+func OrderClients(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		Filter string `json:"filter"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	collection := client.Database(dbName).Collection(userCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var users []models.User
+	for cursor.Next(ctx) {
+		var user models.User
+
+		cursor.Decode(&user)
+		for _, role := range user.Role {
+			if role.Name == "CLIENT" {
+				users = append(users, user)
+			}
+		}
+	}
+
+	if requestBody.Filter == "rating" {
+		sort.Slice(users, func(i, j int) bool {
+			return users[i].Rating > users[j].Rating
+		})
+	}
+	if requestBody.Filter == "services" {
+		sort.Slice(users, func(i, j int) bool {
+			var servicesDoneI, servicesDoneJ int
+
+			for _, role := range users[i].Role {
+				if role.Name == "CLIENT" {
+					servicesDoneI = role.ServicesDone
+					break
+				}
+			}
+
+			for _, role := range users[j].Role {
+				if role.Name == "CLIENT" {
+					servicesDoneJ = role.ServicesDone
+					break
+				}
+			}
+
+			return servicesDoneI > servicesDoneJ
+		})
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(users)
+}
+
+// GetUser handles GET requests to get one specific user by NIF
+func GetFees(client *mongo.Client, dbName, feesCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	vars := mux.Vars(r)
+
+	nifStr, exists := vars["nif"]
+	if !exists {
+		http.Error(w, "NIF is required", http.StatusBadRequest)
+		return
+	}
+
+	nif, err := strconv.ParseInt(nifStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid NIF format", http.StatusBadRequest)
+		return
+	}
+
+	var fees []models.Fee
+	collection := client.Database(dbName).Collection(feesCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var fee models.Fee
+		cursor.Decode(&fee)
+		if fee.NIF == nif {
+			fees = append(fees, fee)
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(fees)
+}
+
+func PayFee(client *mongo.Client, dbName, feesCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	vars := mux.Vars(r)
+	id, exists := vars["id"]
+	if !exists {
+		http.Error(w, "ID is required", http.StatusBadRequest)
+		return
+	}
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+
+	collection := client.Database(dbName).Collection(feesCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	update := bson.M{"$set": bson.M{"paid": true}}
+	result, err := collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if result.MatchedCount == 0 {
+		http.Error(w, "Fee not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("Fee paid successfully")
 }

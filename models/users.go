@@ -21,12 +21,12 @@ type User struct {
 	IsActive      bool               `json:"is_active" bson:"is_active"`
 	CreatedAt     time.Time          `json:"created_at" bson:"created_at"`
 	RecoveryCode  int                `json:"recovery_code" bson:"recovery_code"`
-	Appointments  []Appointment
 }
 
 type Role struct {
-	ID   primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	Name string             `json:"name,omitempty" bson:"name,omitempty"`
+	ID           primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Name         string             `json:"name,omitempty" bson:"name,omitempty"`
+	ServicesDone int                `json:"services_done" bson:"services_done"`
 }
 
 type Fee struct {
