@@ -383,6 +383,14 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		return
 	}
 
+	var priceHour float64
+
+	for _, service := range provider.ServiceTypes {
+		if service.Name == requestBody.ServiceName {
+			priceHour = service.Price
+		}
+	}
+
 	appointment := models.Appointment{
 		ID:          primitive.NewObjectID(),
 		Provider:    provider,
@@ -395,6 +403,7 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		Locality:    requestBody.Locality,
 		Notes:       requestBody.Notes,
 		TotalPrice:  totalPrice,
+		PriceHour:   priceHour,
 		ServiceName: requestBody.ServiceName,
 	}
 
