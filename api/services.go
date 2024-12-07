@@ -570,7 +570,7 @@ func GetClientUpcommingAppointments(client *mongo.Client, dbName, appointmentCol
 		return
 	}
 
-	var appointments []models.Appointment
+	appointments := make([]models.Appointment, 0)
 
 	collection := client.Database(dbName).Collection(appointmentCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -610,7 +610,7 @@ func GetTechUpcommingAppointments(client *mongo.Client, dbName, appointmentColle
 		return
 	}
 
-	var appointments []models.Appointment
+	appointments := make([]models.Appointment, 0)
 
 	collection := client.Database(dbName).Collection(appointmentCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -650,7 +650,7 @@ func GetClientHistoryAppointments(client *mongo.Client, dbName, appointmentColle
 		return
 	}
 
-	var appointments []models.Appointment
+	appointments := make([]models.Appointment, 0)
 
 	collection := client.Database(dbName).Collection(appointmentCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -690,7 +690,7 @@ func GetTechHistoryAppointments(client *mongo.Client, dbName, appointmentCollect
 		return
 	}
 
-	var appointments []models.Appointment
+	appointments := make([]models.Appointment, 0)
 
 	collection := client.Database(dbName).Collection(appointmentCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -718,7 +718,7 @@ func GetTechHistoryAppointments(client *mongo.Client, dbName, appointmentCollect
 // GetHistoryAppointments handles GET requests to get the list of appointments already CLOSED
 func GetHistoryAppointments(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var appointments []models.Appointment
+	appointments := make([]models.Appointment, 0)
 
 	collection := client.Database(dbName).Collection(appointmentCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -760,7 +760,7 @@ func GetAppointmentsByPrice(client *mongo.Client, dbName, appointmentCollection 
 		return
 	}
 
-	var appointments []models.Appointment
+	appointments := make([]models.Appointment, 0)
 
 	collection := client.Database(dbName).Collection(appointmentCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
