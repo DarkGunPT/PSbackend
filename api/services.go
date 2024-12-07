@@ -315,7 +315,7 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		NIF           int     `json:"nif"`
 		Locality      string  `json:"locality"`
 		Notes         string  `json:"notes"`
-		Price         float64 `json:"price"`
+		TotalPrice    float64 `json:"totalPrice"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
@@ -378,7 +378,7 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		NIF:        requestBody.NIF,
 		Locality:   requestBody.Locality,
 		Notes:      requestBody.Notes,
-		TotalPrice: requestBody.Price,
+		TotalPrice: requestBody.TotalPrice,
 	}
 
 	for _, service := range provider.ServiceTypes {
