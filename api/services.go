@@ -586,7 +586,7 @@ func GetClientUpcommingAppointments(client *mongo.Client, dbName, appointmentCol
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
-		if appointment.Client.NIF == nifInt && appointment.Status == "ONGOING" {
+		if appointment.Client.NIF == nifInt && appointment.Status == "SCHEDULED" {
 			appointments = append(appointments, appointment)
 		}
 	}
@@ -626,7 +626,7 @@ func GetTechUpcommingAppointments(client *mongo.Client, dbName, appointmentColle
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
-		if appointment.Provider.NIF == nifInt && appointment.Status == "ONGOING" {
+		if appointment.Provider.NIF == nifInt && appointment.Status == "SCHEDULED" {
 			appointments = append(appointments, appointment)
 		}
 	}
