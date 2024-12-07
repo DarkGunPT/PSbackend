@@ -305,17 +305,17 @@ func GetServiceByTechnician(client *mongo.Client, dbName, serviceCollection stri
 func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userCollection, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
-		ClientEmail   string  `json:"client_email"`
-		ProviderEmail string  `json:"provider_email"`
-		ServiceName   string  `json:"service_name"`
-		Start         string  `json:"start"`
-		End           string  `json:"end"`
-		Email         string  `json:"email"`
-		Phone         int     `json:"phone"`
-		NIF           int     `json:"nif"`
-		Locality      string  `json:"locality"`
-		Notes         string  `json:"notes"`
-		TotalPrice    float64 `json:"totalPrice"`
+		ClientEmail   string `json:"client_email"`
+		ProviderEmail string `json:"provider_email"`
+		ServiceName   string `json:"service_name"`
+		Start         string `json:"start"`
+		End           string `json:"end"`
+		Email         string `json:"email"`
+		Phone         string `json:"phone"`
+		NIF           string `json:"nif"`
+		Locality      string `json:"locality"`
+		Notes         string `json:"notes"`
+		TotalPrice    string `json:"totalPrice"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
@@ -366,6 +366,24 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		return
 	}
 
+	phone, err := strconv.Atoi(requestBody.Phone)
+	if err != nil {
+		http.Error(w, "Invalid Phone format", http.StatusBadRequest)
+		return
+	}
+
+	nif, err := strconv.Atoi(requestBody.NIF)
+	if err != nil {
+		http.Error(w, "Invalid NIF format", http.StatusBadRequest)
+		return
+	}
+
+	totalPrice, err := strconv.ParseFloat(requestBody.TotalPrice, 64)
+	if err != nil {
+		http.Error(w, "Invalid Total price format", http.StatusBadRequest)
+		return
+	}
+
 	appointment := models.Appointment{
 		ID:         primitive.NewObjectID(),
 		Provider:   provider,
@@ -374,11 +392,11 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		Start:      start,
 		End:        end,
 		Email:      requestBody.Email,
-		Phone:      requestBody.Phone,
-		NIF:        requestBody.NIF,
+		Phone:      phone,
+		NIF:        nif,
 		Locality:   requestBody.Locality,
 		Notes:      requestBody.Notes,
-		TotalPrice: requestBody.TotalPrice,
+		TotalPrice: totalPrice,
 	}
 
 	for _, service := range provider.ServiceTypes {
