@@ -666,7 +666,7 @@ func GetClientHistoryAppointments(client *mongo.Client, dbName, appointmentColle
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
-		if appointment.Provider.NIF == nifInt && appointment.Status == "CLOSED" || appointment.Status == "CANCELED" {
+		if appointment.Provider.NIF == nifInt && appointment.Status == "COMPLETED" || appointment.Status == "CANCELED" {
 			appointments = append(appointments, appointment)
 		}
 	}
@@ -706,7 +706,7 @@ func GetTechHistoryAppointments(client *mongo.Client, dbName, appointmentCollect
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
-		if appointment.Client.NIF == nifInt && appointment.Status == "CLOSED" || appointment.Status == "CANCELED" {
+		if appointment.Client.NIF == nifInt && appointment.Status == "COMPLETED" || appointment.Status == "CANCELED" {
 			appointments = append(appointments, appointment)
 		}
 	}
@@ -735,7 +735,7 @@ func GetHistoryAppointments(client *mongo.Client, dbName, appointmentCollection 
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
 
-		if appointment.Status == "CLOSED" || appointment.Status == "CANCELED" {
+		if appointment.Status == "COMPLETED" || appointment.Status == "CANCELED" {
 			appointments = append(appointments, appointment)
 		}
 
