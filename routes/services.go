@@ -10,16 +10,6 @@ import (
 )
 
 func ServiceRoutes(client *mongo.Client, dbName, serviceCollection, userCollection string, router *mux.Router) {
-	// Define route for creating a new service for Back Office
-	router.HandleFunc("/api/v1/bo/services", func(w http.ResponseWriter, r *http.Request) {
-		api.CreateService(client, dbName, serviceCollection, userCollection, w, r)
-	}).Methods("POST")
-
-	// Define route for creating a new service for Mobile App
-	router.HandleFunc("/api/v1/mb/services", func(w http.ResponseWriter, r *http.Request) {
-		api.CreateService(client, dbName, serviceCollection, userCollection, w, r)
-	}).Methods("POST")
-
 	// Define route for getting all services for Back Office
 	router.HandleFunc("/api/v1/bo/services", func(w http.ResponseWriter, r *http.Request) {
 		api.GetServices(client, dbName, serviceCollection, w, r)

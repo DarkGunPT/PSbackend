@@ -15,53 +15,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// CreateService handles POST requests to create a new service
-func CreateService(client *mongo.Client, dbName, serviceCollection, userCollection string, w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var requestBody struct {
-		Price float64 `json:"price"`
-		Name  string  `json:"name"`
-		Email string  `json:"email"`
-	}
-
-	var service models.ServiceType
-	var technician models.User
-
-	err := json.NewDecoder(r.Body).Decode(&requestBody)
-	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
-	}
-
-	collection := client.Database(dbName).Collection(userCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	err = collection.FindOne(ctx, bson.M{"email": requestBody.Email}).Decode(&technician)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			http.Error(w, "User not found", http.StatusNotFound)
-			return
-		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	service.ID = primitive.NewObjectID()
-	service.Employee = technician
-	service.Name = requestBody.Name
-	service.Price = requestBody.Price
-
-	collection = client.Database(dbName).Collection(serviceCollection)
-	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	result, err := collection.InsertOne(ctx, service)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	json.NewEncoder(w).Encode(result)
-}
-
 // GetServices handles GET requests to get the list of services
 func GetServices(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -769,7 +722,7 @@ func GetAppointmentsByPrice(client *mongo.Client, dbName, appointmentCollection 
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
 
-		if appointment.Service.Name == requestBody.ServiceType && appointment.TotalPrice >= requestBody.Min && appointment.TotalPrice < requestBody.Min {
+		if appointment.ServiceName == requestBody.ServiceType && appointment.TotalPrice >= requestBody.Min && appointment.TotalPrice < requestBody.Min {
 			appointments = append(appointments, appointment)
 		}
 	}
