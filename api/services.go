@@ -431,7 +431,7 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		Service:  service,
 		Provider: service.Employee,
 		Client:   cli,
-		Status:   "CREATED",
+		Status:   "SCHEDULED",
 		Start:    start,
 		End:      end,
 		Email:    requestBody.Email,
@@ -544,7 +544,7 @@ func GetUpcommingAppointments(client *mongo.Client, dbName, appointmentCollectio
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
 
-		if appointment.Status == "CREATED" {
+		if appointment.Status == "SCHEDULED" {
 			appointments = append(appointments, appointment)
 		}
 
@@ -586,7 +586,7 @@ func GetClientUpcommingAppointments(client *mongo.Client, dbName, appointmentCol
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
-		if appointment.Client.NIF == nifInt && appointment.Status == "CREATED" || appointment.Status == "ONGOING" {
+		if appointment.Client.NIF == nifInt && appointment.Status == "ONGOING" {
 			appointments = append(appointments, appointment)
 		}
 	}
@@ -626,7 +626,7 @@ func GetTechUpcommingAppointments(client *mongo.Client, dbName, appointmentColle
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
-		if appointment.Provider.NIF == nifInt && appointment.Status == "CREATED" || appointment.Status == "ONGOING" {
+		if appointment.Provider.NIF == nifInt && appointment.Status == "ONGOING" {
 			appointments = append(appointments, appointment)
 		}
 	}
