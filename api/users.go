@@ -320,6 +320,22 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 	if user.Locality != "" {
 		updateFields["locality"] = user.Locality
 	}
+	if user.WorkStart != "" {
+		start, err := time.Parse("2006-01-02T15:04:05.999-07:00", user.WorkStart)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		updateFields["workStart"] = start
+	}
+	if user.WorkEnd != "" {
+		end, err := time.Parse("2006-01-02T15:04:05.999-07:00", user.WorkEnd)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		updateFields["workEnd"] = end
+	}
 
 	if len(updateFields) == 0 {
 		http.Error(w, "No fields to update", http.StatusBadRequest)
@@ -588,6 +604,8 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 			},
 		}
 	}
+	updateFields["workStart"] = user.WorkStart
+	updateFields["workEnd"] = user.WorkEnd
 	updateFields["service_types"] = user.ServiceTypes
 	updateFields["locality"] = user.Locality
 	updateFields["is_active"] = true

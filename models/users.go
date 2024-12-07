@@ -21,6 +21,8 @@ type User struct {
 	IsActive      bool               `json:"is_active" bson:"is_active"`
 	CreatedAt     time.Time          `json:"created_at" bson:"created_at"`
 	RecoveryCode  int                `json:"recovery_code" bson:"recovery_code"`
+	WorkStart     string             `json :"workStart" bson:"workStart"`
+	WorkEnd       string             `json:"workEnd" bson:"workEnd"`
 }
 
 type Role struct {
