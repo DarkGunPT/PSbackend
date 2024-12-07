@@ -310,7 +310,6 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		ServiceName   string `json:"service_name"`
 		Start         string `json:"start"`
 		End           string `json:"end"`
-		Email         string `json:"email"`
 		Phone         string `json:"phone"`
 		NIF           string `json:"nif"`
 		Locality      string `json:"locality"`
@@ -391,7 +390,6 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		Status:     "SCHEDULED",
 		Start:      start,
 		End:        end,
-		Email:      requestBody.Email,
 		Phone:      phone,
 		NIF:        nif,
 		Locality:   requestBody.Locality,
@@ -416,39 +414,39 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 
 	for _, role := range cli.Role {
 		if role.Name == "CLIENT" {
-			role.ServicesDone++
+			role.ServicesDone = role.ServicesDone + 1
 		}
 	}
 
 	for _, role := range provider.Role {
 		if role.Name == "TECH" {
-			role.ServicesDone++
+			role.ServicesDone = role.ServicesDone + 1
 		}
 	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	update, err := collection.UpdateOne(ctx, bson.M{"email": cli.Email}, bson.M{"$set": cli}, options.Update().SetUpsert(true))
+	update, err := collection.ReplaceOne(ctx, bson.M{"email": cli.Email}, cli)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if update.ModifiedCount == 0 {
-		http.Error(w, "Client not found", http.StatusNotFound)
+	if update.MatchedCount == 0 {
+		http.Error(w, "Client not found to update", http.StatusNotFound)
 		return
 	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	update, err = collection.UpdateOne(ctx, bson.M{"email": provider.Email}, bson.M{"$set": provider}, options.Update().SetUpsert(true))
+	update, err = collection.ReplaceOne(ctx, bson.M{"email": provider.Email}, provider)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if update.ModifiedCount == 0 {
-		http.Error(w, "Provider not found", http.StatusNotFound)
+	if update.MatchedCount == 0 {
+		http.Error(w, "Provider not found to update", http.StatusNotFound)
 		return
 	}
 
