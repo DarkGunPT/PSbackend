@@ -106,17 +106,17 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection, userCollecti
 	}).Methods("GET")
 
 	// Define route to get all the upcomming appointments of a Technician
-	router.HandleFunc("/api/v1/bo/services/appointments/upcomming", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/bo/services/appointments/upcoming", func(w http.ResponseWriter, r *http.Request) {
 		api.GetUpcommingAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
 	}).Methods("GET")
 
 	// Define route to get all the upcomming appointments of a Client
-	router.HandleFunc("/api/v1/mb/services/appointments/upcomming/client/{nif}", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/mb/services/appointments/upcoming/client/{nif}", func(w http.ResponseWriter, r *http.Request) {
 		api.GetClientUpcommingAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
 	}).Methods("GET")
 
 	// Define route to get all the upcomming appointments of a Technician
-	router.HandleFunc("/api/v1/mb/services/appointments/upcomming/technician/{nif}", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/mb/services/appointments/upcoming/technician/{nif}", func(w http.ResponseWriter, r *http.Request) {
 		api.GetTechUpcommingAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
 	}).Methods("GET")
 
