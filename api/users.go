@@ -289,47 +289,60 @@ func GetUser(client *mongo.Client, dbName, userCollection string, w http.Respons
 // UpdateUser handles PUT request to update one specific user
 func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var user models.User
 
-	json.NewDecoder(r.Body).Decode(&user)
-	if user.Email == "" {
+	var requestBody struct {
+		Name         string               `json:"name" bson:"name"`
+		Password     string               `json:"password" bson:"password"`
+		NIF          int                  `json:"nif" bson:"nif"`
+		Phone        int                  `json:"phone" bson:"phone"`
+		Email        string               `json:"email" bson:"email"`
+		Role         []models.Role        `json:"role" bson:"role"`
+		ServiceTypes []models.ServiceType `json:"service_types" bson:"service_types"`
+		Locality     string               `json:"locality" bson:"locality"`
+		RecoveryCode int                  `json:"recovery_code" bson:"recovery_code"`
+		WorkStart    string               `json :"workStart" bson:"workStart"`
+		WorkEnd      string               `json:"workEnd" bson:"workEnd"`
+	}
+
+	json.NewDecoder(r.Body).Decode(&requestBody)
+	if requestBody.Email == "" {
 		http.Error(w, "Email is required for update", http.StatusBadRequest)
 		return
 	}
 
 	collection := client.Database(dbName).Collection(userCollection)
 	var updateFields bson.M = bson.M{}
-	if user.Name != "" {
-		updateFields["name"] = user.Name
+	if requestBody.Name != "" {
+		updateFields["name"] = requestBody.Name
 	}
-	if user.Password != "" {
-		updateFields["password"] = user.Password
+	if requestBody.Password != "" {
+		updateFields["password"] = requestBody.Password
 	}
-	if user.NIF != 0 {
-		updateFields["nif"] = user.NIF
+	if requestBody.NIF != 0 {
+		updateFields["nif"] = requestBody.NIF
 	}
-	if user.Phone != 0 {
-		updateFields["phone"] = user.Phone
+	if requestBody.Phone != 0 {
+		updateFields["phone"] = requestBody.Phone
 	}
-	if len(user.Role) > 0 {
-		updateFields["role"] = user.Role
+	if len(requestBody.Role) > 0 {
+		updateFields["role"] = requestBody.Role
 	}
-	if len(user.ServiceTypes) > 0 {
-		updateFields["service_types"] = user.ServiceTypes
+	if len(requestBody.ServiceTypes) > 0 {
+		updateFields["service_types"] = requestBody.ServiceTypes
 	}
-	if user.Locality != "" {
-		updateFields["locality"] = user.Locality
+	if requestBody.Locality != "" {
+		updateFields["locality"] = requestBody.Locality
 	}
-	if user.WorkStart != "" {
-		start, err := time.Parse("2006-01-02T15:04:05.999-07:00", user.WorkStart)
+	if requestBody.WorkStart != "" {
+		start, err := time.Parse("15:04:05.999-07:00", requestBody.WorkStart)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		updateFields["workStart"] = start
 	}
-	if user.WorkEnd != "" {
-		end, err := time.Parse("2006-01-02T15:04:05.999-07:00", user.WorkEnd)
+	if requestBody.WorkEnd != "" {
+		end, err := time.Parse("15:04:05.999-07:00", requestBody.WorkEnd)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -344,7 +357,7 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	result, err := collection.UpdateOne(ctx, bson.M{"email": user.Email}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
+	result, err := collection.UpdateOne(ctx, bson.M{"email": requestBody.Email}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
