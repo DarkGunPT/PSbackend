@@ -412,7 +412,7 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		return
 	}
 
-	for _, role := range cli.Role {
+	/*for _, role := range cli.Role {
 		if role.Name == "CLIENT" {
 			role.ServicesDone = role.ServicesDone + 1
 		}
@@ -448,7 +448,7 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 	if update.MatchedCount == 0 {
 		http.Error(w, "Provider not found to update", http.StatusNotFound)
 		return
-	}
+	}*/
 
 	jsonResponse := map[string]interface{}{
 		"message": "Appointment created successfully",

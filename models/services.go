@@ -20,7 +20,6 @@ type Appointment struct {
 	Status      string             `json:"status,omitempty" bson:"status,omitempty"`
 	Start       time.Time          `json:"start,omitempty" bson:"start,omitempty"`
 	End         time.Time          `json:"end,omitempty" bson:"end,omitempty"`
-	Email       string             `json:"email" bson:"email"`
 	Phone       int                `json:"phone" bson:"phone"`
 	NIF         int                `json:"nif" bson:"nif"`
 	Locality    string             `json:"locality" bson:"locality"`
