@@ -384,17 +384,18 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 	}
 
 	appointment := models.Appointment{
-		ID:         primitive.NewObjectID(),
-		Provider:   provider,
-		Client:     cli,
-		Status:     "SCHEDULED",
-		Start:      start,
-		End:        end,
-		Phone:      phone,
-		NIF:        nif,
-		Locality:   requestBody.Locality,
-		Notes:      requestBody.Notes,
-		TotalPrice: totalPrice,
+		ID:          primitive.NewObjectID(),
+		Provider:    provider,
+		Client:      cli,
+		Status:      "SCHEDULED",
+		Start:       start,
+		End:         end,
+		Phone:       phone,
+		NIF:         nif,
+		Locality:    requestBody.Locality,
+		Notes:       requestBody.Notes,
+		TotalPrice:  totalPrice,
+		ServiceName: requestBody.ServiceName,
 	}
 
 	for _, service := range provider.ServiceTypes {
