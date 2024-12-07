@@ -352,16 +352,17 @@ func GetServiceByTechnician(client *mongo.Client, dbName, serviceCollection stri
 func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userCollection, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
-		ServiceID   primitive.ObjectID `json:"service_id"`
-		ClientEmail string             `json:"client_email"`
-		Start       string             `json:"start"`
-		End         string             `json:"end"`
-		Email       string             `json:"email"`
-		Phone       int                `json:"phone"`
-		NIF         int                `json:"nif"`
-		Locality    string             `json:"locality"`
-		Notes       string             `json:"notes"`
-		Price       float64            `json:"price"`
+		ClientEmail   string  `json:"client_email"`
+		ProviderEmail string  `json:"provider_email"`
+		ServiceName   string  `json:"service_name"`
+		Start         string  `json:"start"`
+		End           string  `json:"end"`
+		Email         string  `json:"email"`
+		Phone         int     `json:"phone"`
+		NIF           int     `json:"nif"`
+		Locality      string  `json:"locality"`
+		Notes         string  `json:"notes"`
+		Price         float64 `json:"price"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
@@ -385,26 +386,12 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		return
 	}
 
-	var service models.ServiceType
-	collection = client.Database(dbName).Collection(serviceCollection)
-	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	err = collection.FindOne(ctx, bson.M{"_id": requestBody.ServiceID}).Decode(&service)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			http.Error(w, "Service not found", http.StatusNotFound)
-			return
-		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	var provider models.User
 
 	collection = client.Database(dbName).Collection(userCollection)
 	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	err = collection.FindOne(ctx, bson.M{"email": service.Employee.Email}).Decode(&provider)
+	err = collection.FindOne(ctx, bson.M{"email": requestBody}).Decode(&provider)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			http.Error(w, "User not found", http.StatusNotFound)
@@ -427,19 +414,24 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 	}
 
 	appointment := models.Appointment{
-		ID:       primitive.NewObjectID(),
-		Service:  service,
-		Provider: service.Employee,
-		Client:   cli,
-		Status:   "SCHEDULED",
-		Start:    start,
-		End:      end,
-		Email:    requestBody.Email,
-		Phone:    requestBody.Phone,
-		NIF:      requestBody.NIF,
-		Locality: requestBody.Locality,
-		Notes:    requestBody.Notes,
-		Price:    requestBody.Price,
+		ID:         primitive.NewObjectID(),
+		Provider:   provider,
+		Client:     cli,
+		Status:     "SCHEDULED",
+		Start:      start,
+		End:        end,
+		Email:      requestBody.Email,
+		Phone:      requestBody.Phone,
+		NIF:        requestBody.NIF,
+		Locality:   requestBody.Locality,
+		Notes:      requestBody.Notes,
+		TotalPrice: requestBody.Price,
+	}
+
+	for _, service := range provider.ServiceTypes {
+		if service.Name == requestBody.ServiceName {
+			appointment.PriceHour = service.Price
+		}
 	}
 
 	collection = client.Database(dbName).Collection(appointmentCollection)
@@ -777,7 +769,7 @@ func GetAppointmentsByPrice(client *mongo.Client, dbName, appointmentCollection 
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
 
-		if appointment.Service.Name == requestBody.ServiceType && appointment.Price >= requestBody.Min && appointment.Price < requestBody.Min {
+		if appointment.Service.Name == requestBody.ServiceType && appointment.TotalPrice >= requestBody.Min && appointment.TotalPrice < requestBody.Min {
 			appointments = append(appointments, appointment)
 		}
 	}
