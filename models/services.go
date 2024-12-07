@@ -25,7 +25,7 @@ type Appointment struct {
 	NIF         int                `json:"nif" bson:"nif"`
 	Locality    string             `json:"locality" bson:"locality"`
 	Notes       string             `json:"notes" bson:"notes"`
-	PriceHour   float64            `json:"priceHour,omitempty" bson:"totalPrice,omitempty"`
+	PriceHour   float64            `json:"priceHour,omitempty" bson:"priceHour,omitempty"`
 	TotalPrice  float64            `json:"totalPrice,omitempty" bson:"totalPrice,omitempty"`
 }
 
