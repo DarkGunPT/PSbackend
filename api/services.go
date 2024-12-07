@@ -666,7 +666,7 @@ func GetClientHistoryAppointments(client *mongo.Client, dbName, appointmentColle
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
-		if appointment.Provider.NIF == nifInt && appointment.Status == "COMPLETED" || appointment.Status == "CANCELED" {
+		if appointment.Client.NIF == nifInt && appointment.Status == "COMPLETED" || appointment.Status == "CANCELED" {
 			appointments = append(appointments, appointment)
 		}
 	}
