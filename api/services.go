@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -386,7 +387,7 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 	var priceHour float64
 
 	for _, service := range provider.ServiceTypes {
-		if service.Name == requestBody.ServiceName {
+		if service.Name == strings.ToUpper(requestBody.ServiceName) {
 			priceHour = service.Price
 		}
 	}
