@@ -344,7 +344,7 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 	collection = client.Database(dbName).Collection(userCollection)
 	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	err = collection.FindOne(ctx, bson.M{"email": requestBody}).Decode(&provider)
+	err = collection.FindOne(ctx, bson.M{"email": requestBody.ProviderEmail}).Decode(&provider)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			http.Error(w, "User not found", http.StatusNotFound)
