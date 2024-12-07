@@ -10,7 +10,7 @@ type ServiceType struct {
 	ID       primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Employee User               `json:"employee,omitempty" bson:"employee,omitempty"`
 	Name     string             `json:"name,omitempty" bson:"name,omitempty"`
-	Price    float64            `json:"priceHour,omitempty" bson:"priceHour,omitempty"`
+	Price    float64            `json:"price,omitempty" bson:"price,omitempty"`
 }
 
 type Appointment struct {
