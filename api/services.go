@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -556,13 +557,16 @@ func GetUpcommingAppointments(client *mongo.Client, dbName, appointmentCollectio
 // GetClientUpcommingAppointments handles GET requests to get the list of upcomming appointments of a client
 func GetClientUpcommingAppointments(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var requestBody struct {
-		Email string `json:"email"`
-	}
 
-	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	vars := mux.Vars(r)
+	nif, exists := vars["nif"]
+	if !exists {
+		http.Error(w, "NIF is required", http.StatusBadRequest)
+		return
+	}
+	nifInt, err := strconv.Atoi(nif)
 	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		http.Error(w, "Invalid NIF format", http.StatusBadRequest)
 		return
 	}
 
@@ -582,7 +586,7 @@ func GetClientUpcommingAppointments(client *mongo.Client, dbName, appointmentCol
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
-		if appointment.Client.Email == requestBody.Email && appointment.Status == "CREATED" {
+		if appointment.Client.NIF == nifInt && appointment.Status == "CREATED" || appointment.Status == "ONGOING" {
 			appointments = append(appointments, appointment)
 		}
 	}
@@ -594,13 +598,15 @@ func GetClientUpcommingAppointments(client *mongo.Client, dbName, appointmentCol
 // GetTechUpcommingAppointments handles GET requests to get the list of upcomming appointments of a tech
 func GetTechUpcommingAppointments(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var requestBody struct {
-		Email string `json:"email"`
+	vars := mux.Vars(r)
+	nif, exists := vars["nif"]
+	if !exists {
+		http.Error(w, "NIF is required", http.StatusBadRequest)
+		return
 	}
-
-	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	nifInt, err := strconv.Atoi(nif)
 	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		http.Error(w, "Invalid NIF format", http.StatusBadRequest)
 		return
 	}
 
@@ -620,7 +626,7 @@ func GetTechUpcommingAppointments(client *mongo.Client, dbName, appointmentColle
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
-		if appointment.Provider.Email == requestBody.Email && appointment.Status == "CREATED" {
+		if appointment.Provider.NIF == nifInt && appointment.Status == "CREATED" || appointment.Status == "ONGOING" {
 			appointments = append(appointments, appointment)
 		}
 	}
@@ -632,13 +638,15 @@ func GetTechUpcommingAppointments(client *mongo.Client, dbName, appointmentColle
 // GetClientHistoryAppointments handles GET requests to get the list of appointments of a client already CLOSED
 func GetClientHistoryAppointments(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var requestBody struct {
-		Email string `json:"email"`
+	vars := mux.Vars(r)
+	nif, exists := vars["nif"]
+	if !exists {
+		http.Error(w, "NIF is required", http.StatusBadRequest)
+		return
 	}
-
-	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	nifInt, err := strconv.Atoi(nif)
 	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		http.Error(w, "Invalid NIF format", http.StatusBadRequest)
 		return
 	}
 
@@ -658,7 +666,7 @@ func GetClientHistoryAppointments(client *mongo.Client, dbName, appointmentColle
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
-		if appointment.Provider.Email == requestBody.Email && appointment.Status == "CLOSED" || appointment.Status == "CANCEL" {
+		if appointment.Provider.NIF == nifInt && appointment.Status == "CLOSED" || appointment.Status == "CANCELED" {
 			appointments = append(appointments, appointment)
 		}
 	}
@@ -670,13 +678,15 @@ func GetClientHistoryAppointments(client *mongo.Client, dbName, appointmentColle
 // GetTechHistoryAppointments handles GET requests to get the list of appointments of a tech already closed
 func GetTechHistoryAppointments(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var requestBody struct {
-		Email string `json:"email"`
+	vars := mux.Vars(r)
+	nif, exists := vars["nif"]
+	if !exists {
+		http.Error(w, "NIF is required", http.StatusBadRequest)
+		return
 	}
-
-	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	nifInt, err := strconv.Atoi(nif)
 	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		http.Error(w, "Invalid NIF format", http.StatusBadRequest)
 		return
 	}
 
@@ -696,7 +706,7 @@ func GetTechHistoryAppointments(client *mongo.Client, dbName, appointmentCollect
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
-		if appointment.Client.Email == requestBody.Email && appointment.Status == "CLOSED" || appointment.Status == "CANCEL" {
+		if appointment.Client.NIF == nifInt && appointment.Status == "CLOSED" || appointment.Status == "CANCELED" {
 			appointments = append(appointments, appointment)
 		}
 	}
@@ -725,7 +735,7 @@ func GetHistoryAppointments(client *mongo.Client, dbName, appointmentCollection 
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
 
-		if appointment.Status == "CLOSED" || appointment.Status == "CANCEL" {
+		if appointment.Status == "CLOSED" || appointment.Status == "CANCELED" {
 			appointments = append(appointments, appointment)
 		}
 
@@ -795,7 +805,7 @@ func DeleteAppointment(client *mongo.Client, dbName, appointmentCollection strin
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	update := bson.M{"$set": bson.M{"status": "CANCEL"}}
+	update := bson.M{"$set": bson.M{"status": "CANCELED"}}
 	result, err := collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

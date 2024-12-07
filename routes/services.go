@@ -111,12 +111,12 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection, userCollecti
 	}).Methods("GET")
 
 	// Define route to get all the upcomming appointments of a Client
-	router.HandleFunc("/api/v1/mb/services/appointments/upcomming/client", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/mb/services/appointments/upcomming/client/{nif}", func(w http.ResponseWriter, r *http.Request) {
 		api.GetClientUpcommingAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
 	}).Methods("GET")
 
 	// Define route to get all the upcomming appointments of a Technician
-	router.HandleFunc("/api/v1/mb/services/appointments/upcomming/technician", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/mb/services/appointments/upcomming/technician/{nif}", func(w http.ResponseWriter, r *http.Request) {
 		api.GetTechUpcommingAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
 	}).Methods("GET")
 
@@ -126,12 +126,12 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection, userCollecti
 	}).Methods("GET")
 
 	// Define route to get history of appointments of a Client
-	router.HandleFunc("/api/v1/mb/services/appointments/history/client", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/mb/services/appointments/history/client/{nif}", func(w http.ResponseWriter, r *http.Request) {
 		api.GetClientHistoryAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
 	}).Methods("GET")
 
 	// Define route to get history of appointments of a Tech
-	router.HandleFunc("/api/v1/mb/services/appointments/history/technician", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/mb/services/appointments/history/technician/{nif}", func(w http.ResponseWriter, r *http.Request) {
 		api.GetTechHistoryAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
 	}).Methods("GET")
 
