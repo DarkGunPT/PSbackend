@@ -300,7 +300,7 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 		ServiceTypes []models.ServiceType `json:"service_types" bson:"service_types"`
 		Locality     string               `json:"locality" bson:"locality"`
 		RecoveryCode int                  `json:"recovery_code" bson:"recovery_code"`
-		WorkStart    string               `json :"workStart" bson:"workStart"`
+		WorkStart    string               `json:"workStart" bson:"workStart"`
 		WorkEnd      string               `json:"workEnd" bson:"workEnd"`
 	}
 

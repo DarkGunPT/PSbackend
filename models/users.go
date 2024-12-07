@@ -21,7 +21,7 @@ type User struct {
 	IsActive      bool               `json:"is_active" bson:"is_active"`
 	CreatedAt     time.Time          `json:"created_at" bson:"created_at"`
 	RecoveryCode  int                `json:"recovery_code" bson:"recovery_code"`
-	WorkStart     time.Time          `json :"workStart" bson:"workStart"`
+	WorkStart     time.Time          `json:"workStart" bson:"workStart"`
 	WorkEnd       time.Time          `json:"workEnd" bson:"workEnd"`
 }
 
@@ -37,7 +37,7 @@ type Fee struct {
 	Value    float64            `json:"value,omitempty" bson:"value,omitempty"`
 	JobsDone int64              `json:"jobs_done,omitempty" bson:"jobs_done,omitempty"`
 	Paid     bool               `json:"paid,omitempty" bson:"paid,omitempty"`
-	Month    string             `json:"month"`
-	Year     string             `json:"month"`
+	Month    string             `json:"month" bson:"month,omitempty"`
+	Year     string             `json:"year" bson:"year,omitempty"`
 	Date     time.Time          `json:"date,omitempty" bson:"date,omitempty"`
 }
