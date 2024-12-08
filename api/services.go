@@ -439,7 +439,7 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 
 	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	update, err := collection.ReplaceOne(ctx, bson.M{"email": cli.Email}, bson.M{"$set": bson.M{"role": cli.Role}})
+	update, err := collection.UpdateOne(ctx, bson.M{"email": cli.Email}, bson.M{"$set": bson.M{"role": cli.Role}})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

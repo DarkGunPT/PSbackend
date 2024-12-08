@@ -595,41 +595,59 @@ func GetClients(client *mongo.Client, dbName, userCollection string, w http.Resp
 // UpdateUser handles PUT request to update one specific user
 func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var user models.User
 
-	json.NewDecoder(r.Body).Decode(&user)
-	if user.Email == "" {
+	var requestBody struct {
+		Email        string               `json:"email" bson:"email"`
+		Name         string               `json:"name" bson:"name"`
+		NIF          string               `json:"nif" bson:"nif"`
+		Password     string               `json:"password" bson:"password"`
+		Phone        string               `json:"phone" bson:"phone"`
+		ServiceTypes []models.ServiceType `json:"service_types" bson:"service_types"`
+		Locality     string               `json:"locality" bson:"locality"`
+		WorkStart    string               `json:"workStart" bson:"workStart"`
+		WorkEnd      string               `json:"workEnd" bson:"workEnd"`
+	}
+	json.NewDecoder(r.Body).Decode(&requestBody)
+	if requestBody.Email == "" {
 		http.Error(w, "Email is required for update", http.StatusBadRequest)
 		return
 	}
 
 	collection := client.Database(dbName).Collection(userCollection)
-	if user.Name == "" {
+	if requestBody.Name == "" {
 		http.Error(w, "Name is required for registration", http.StatusBadRequest)
 		return
 	}
-	if user.NIF == 0 {
+	if requestBody.NIF == "" {
 		http.Error(w, "NIF is required for registration", http.StatusBadRequest)
 		return
 	}
-	if user.Phone == 0 {
+	if requestBody.Phone == "" {
 		http.Error(w, "Phone is required for registration", http.StatusBadRequest)
 		return
 	}
-	if len(user.Role) == 0 {
-		http.Error(w, "Role is required for registration", http.StatusBadRequest)
-		return
-	}
-	if user.Locality == "" {
+	if requestBody.Locality == "" {
 		http.Error(w, "Locality is required for registration", http.StatusBadRequest)
 		return
 	}
 
+	nif, err := strconv.ParseInt(requestBody.NIF, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid NIF format", http.StatusBadRequest)
+		return
+	}
+
+	phone, err := strconv.ParseInt(requestBody.Phone, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid NIF format", http.StatusBadRequest)
+		return
+	}
+
 	var updateFields bson.M = bson.M{}
-	updateFields["name"] = user.Name
-	updateFields["nif"] = user.NIF
-	updateFields["phone"] = user.Phone
-	if len(user.ServiceTypes) == 0 {
+	updateFields["name"] = requestBody.Name
+	updateFields["nif"] = nif
+	updateFields["phone"] = phone
+	if len(requestBody.ServiceTypes) == 0 {
 		updateFields["role"] = []models.Role{
 			{
 				Name: "CLIENT",
@@ -644,16 +662,17 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 				Name: "TECH",
 			},
 		}
+		updateFields["workStart"] = requestBody.WorkStart
+		updateFields["workEnd"] = requestBody.WorkEnd
 	}
-	updateFields["workStart"] = user.WorkStart
-	updateFields["workEnd"] = user.WorkEnd
-	updateFields["service_types"] = user.ServiceTypes
-	updateFields["locality"] = user.Locality
+
+	updateFields["service_types"] = requestBody.ServiceTypes
+	updateFields["locality"] = requestBody.Locality
 	updateFields["is_active"] = true
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	result, err := collection.UpdateOne(ctx, bson.M{"email": user.Email}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
+	result, err := collection.UpdateOne(ctx, bson.M{"email": requestBody.Email}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
