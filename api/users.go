@@ -607,10 +607,6 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 		WorkEnd      string               `json:"workEnd" bson:"workEnd"`
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("User updated successfully")
-	return
-
 	json.NewDecoder(r.Body).Decode(&requestBody)
 	if requestBody.Email == "" {
 		http.Error(w, "Email is required for update", http.StatusBadRequest)
@@ -635,17 +631,15 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 		return
 	}
 
-	nif, err := strconv.ParseInt(requestBody.NIF, 10, 64)
-	errors := fmt.Sprintf("Invalid NIF %s", err.Error())
+	nif, err := strconv.Atoi(requestBody.NIF)
 	if err != nil {
-		http.Error(w, errors, http.StatusBadRequest)
+		http.Error(w, "Invalid NIF format", http.StatusBadRequest)
 		return
 	}
 
-	phone, err := strconv.ParseInt(requestBody.Phone, 10, 64)
-	errors = fmt.Sprintf("Invalid Phone %s", err.Error())
+	phone, err := strconv.Atoi(requestBody.Phone)
 	if err != nil {
-		http.Error(w, errors, http.StatusBadRequest)
+		http.Error(w, "Invalid Phone format", http.StatusBadRequest)
 		return
 	}
 
@@ -668,8 +662,18 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 				Name: "TECH",
 			},
 		}
-		updateFields["workStart"] = requestBody.WorkStart
-		updateFields["workEnd"] = requestBody.WorkEnd
+		start, err := time.Parse("2006-01-02T15:04:05.999-07:00", requestBody.WorkStart)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		updateFields["workStart"] = start
+		end, err := time.Parse("2006-01-02T15:04:05.999-07:00", requestBody.WorkEnd)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		updateFields["workEnd"] = end
 	}
 
 	updateFields["service_types"] = requestBody.ServiceTypes
