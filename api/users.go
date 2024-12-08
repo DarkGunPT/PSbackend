@@ -307,8 +307,8 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 	var requestBody struct {
 		Name         string               `json:"name" bson:"name"`
 		Password     string               `json:"password" bson:"password"`
-		NIF          int                  `json:"nif" bson:"nif"`
-		Phone        int                  `json:"phone" bson:"phone"`
+		NIF          string               `json:"nif" bson:"nif"`
+		Phone        string               `json:"phone" bson:"phone"`
 		Role         []models.Role        `json:"role" bson:"role"`
 		ServiceTypes []models.ServiceType `json:"service_types" bson:"service_types"`
 		Locality     string               `json:"locality" bson:"locality"`
@@ -322,6 +322,18 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 		return
 	}
 
+	parsedNif, err := strconv.ParseInt(requestBody.NIF, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid NIF format", http.StatusBadRequest)
+		return
+	}
+
+	parsedPhone, err := strconv.ParseInt(requestBody.Phone, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid Phone format", http.StatusBadRequest)
+		return
+	}
+
 	collection := client.Database(dbName).Collection(userCollection)
 	var updateFields bson.M = bson.M{}
 	if requestBody.Name != "" {
@@ -330,11 +342,11 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 	if requestBody.Password != "" {
 		updateFields["password"] = requestBody.Password
 	}
-	if requestBody.NIF != 0 {
-		updateFields["nif"] = requestBody.NIF
+	if parsedNif != 0 {
+		updateFields["nif"] = parsedNif
 	}
-	if requestBody.Phone != 0 {
-		updateFields["phone"] = requestBody.Phone
+	if parsedPhone != 0 {
+		updateFields["phone"] = parsedPhone
 	}
 	if len(requestBody.Role) > 0 {
 		updateFields["role"] = requestBody.Role
