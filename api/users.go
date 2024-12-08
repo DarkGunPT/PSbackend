@@ -600,7 +600,6 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 		Email        string               `json:"email" bson:"email"`
 		Name         string               `json:"name" bson:"name"`
 		NIF          string               `json:"nif" bson:"nif"`
-		Password     string               `json:"password" bson:"password"`
 		Phone        string               `json:"phone" bson:"phone"`
 		ServiceTypes []models.ServiceType `json:"service_types" bson:"service_types"`
 		Locality     string               `json:"locality" bson:"locality"`
@@ -632,14 +631,16 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 	}
 
 	nif, err := strconv.ParseInt(requestBody.NIF, 10, 64)
+	errors := fmt.Sprintf("Invalid NIF %s", err.Error())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, errors, http.StatusBadRequest)
 		return
 	}
 
 	phone, err := strconv.ParseInt(requestBody.Phone, 10, 64)
+	errors = fmt.Sprintf("Invalid Phone %s", err.Error())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, errors, http.StatusBadRequest)
 		return
 	}
 
