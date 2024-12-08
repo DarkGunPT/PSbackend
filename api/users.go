@@ -317,9 +317,9 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 		WorkEnd      string               `json:"workEnd" bson:"workEnd"`
 	}
 
-	json.NewDecoder(r.Body).Decode(&requestBody)
-	if requestBody.Email == "" {
-		http.Error(w, "Email is required for update", http.StatusBadRequest)
+	err = json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
