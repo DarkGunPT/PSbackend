@@ -425,15 +425,15 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		return
 	}
 
-	for _, role := range cli.Role {
-		if role.Name == "CLIENT" {
-			role.ServicesDone = role.ServicesDone + 1
+	for i := range cli.Role {
+		if cli.Role[i].Name == "CLIENT" {
+			cli.Role[i].ServicesDone++
 		}
 	}
 
-	for _, role := range provider.Role {
-		if role.Name == "TECH" {
-			role.ServicesDone = role.ServicesDone + 1
+	for i := range provider.Role {
+		if cli.Role[i].Name == "TECH" {
+			cli.Role[i].ServicesDone++
 		}
 	}
 
