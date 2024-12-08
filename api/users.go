@@ -318,7 +318,7 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 
 	err = json.NewDecoder(r.Body).Decode(&requestBody)
 	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
