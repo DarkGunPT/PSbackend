@@ -10,6 +10,11 @@ import (
 )
 
 func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux.Router) {
+	// Define route to finish the registration for mobile
+	router.HandleFunc("/api/v1/mb/users/register-completion", func(w http.ResponseWriter, r *http.Request) {
+		api.RegisterCompletion(client, dbName, userCollection, w, r)
+	}).Methods("PUT")
+
 	// Define route to get users for mobile
 	router.HandleFunc("/api/v1/mb/users", func(w http.ResponseWriter, r *http.Request) {
 		api.GetUsers(client, dbName, userCollection, w, r)
@@ -124,11 +129,6 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 	router.HandleFunc("/api/v1/bo/users/recovery-confirmation", func(w http.ResponseWriter, r *http.Request) {
 		api.ConfirmAuthCode(client, dbName, userCollection, w, r)
 	}).Methods("POST")
-
-	// Define route to finish the registration for mobile
-	router.HandleFunc("/api/v1/mb/users/register-completion", func(w http.ResponseWriter, r *http.Request) {
-		api.RegisterCompletion(client, dbName, userCollection, w, r)
-	}).Methods("PUT")
 
 	// Define route to get a user by nif  for mobile
 	router.HandleFunc("/api/v1/mb/users/{nif}", func(w http.ResponseWriter, r *http.Request) {
