@@ -36,7 +36,7 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 	}).Methods("GET")
 
 	// Define route to update a user for mobile
-	router.HandleFunc("/api/v1/mb/users", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/mb/users/{nif}", func(w http.ResponseWriter, r *http.Request) {
 		api.UpdateUser(client, dbName, userCollection, w, r)
 	}).Methods("PUT")
 

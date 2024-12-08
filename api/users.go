@@ -290,6 +290,20 @@ func GetUser(client *mongo.Client, dbName, userCollection string, w http.Respons
 func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	vars := mux.Vars(r)
+
+	nifStr, exists := vars["nif"]
+	if !exists {
+		http.Error(w, "NIF is required", http.StatusBadRequest)
+		return
+	}
+
+	nif, err := strconv.ParseInt(nifStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid NIF format", http.StatusBadRequest)
+		return
+	}
+
 	var requestBody struct {
 		Name         string               `json:"name" bson:"name"`
 		Password     string               `json:"password" bson:"password"`
@@ -299,7 +313,6 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 		Role         []models.Role        `json:"role" bson:"role"`
 		ServiceTypes []models.ServiceType `json:"service_types" bson:"service_types"`
 		Locality     string               `json:"locality" bson:"locality"`
-		RecoveryCode int                  `json:"recovery_code" bson:"recovery_code"`
 		WorkStart    string               `json:"workStart" bson:"workStart"`
 		WorkEnd      string               `json:"workEnd" bson:"workEnd"`
 	}
@@ -357,7 +370,7 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	result, err := collection.UpdateOne(ctx, bson.M{"email": requestBody.Email}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
+	result, err := collection.UpdateOne(ctx, bson.M{"nif": nif}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
