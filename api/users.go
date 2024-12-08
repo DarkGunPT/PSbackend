@@ -358,7 +358,7 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 		updateFields["locality"] = requestBody.Locality
 	}
 	if requestBody.WorkStart != "" {
-		start, err := time.Parse("15:04:05.999-07:00", requestBody.WorkStart)
+		start, err := time.Parse("2006-01-02T15:04:05.999-07:00", requestBody.WorkStart)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -366,7 +366,7 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 		updateFields["workStart"] = start
 	}
 	if requestBody.WorkEnd != "" {
-		end, err := time.Parse("15:04:05.999-07:00", requestBody.WorkEnd)
+		end, err := time.Parse("2006-01-02T15:04:05.999-07:00", requestBody.WorkEnd)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
