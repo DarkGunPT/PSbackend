@@ -682,19 +682,20 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	result, err := collection.UpdateOne(ctx, bson.M{"email": requestBody.Email}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetUpsert(true)
+	var updatedUser models.User
+	err = collection.FindOneAndUpdate(ctx, bson.M{"email": requestBody.Email}, bson.M{"$set": updateFields}, opts).Decode(&updatedUser)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if result.ModifiedCount == 0 {
-		http.Error(w, "User not found", http.StatusNotFound)
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "User not found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("User updated successfully")
+	json.NewEncoder(w).Encode(updatedUser)
 }
 
 func UpdateBlock(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
@@ -949,7 +950,8 @@ func GetFees(client *mongo.Client, dbName, feesCollection string, w http.Respons
 		return
 	}
 
-	var fees []models.Fee
+	fees := make([]models.Fee, 0)
+
 	collection := client.Database(dbName).Collection(feesCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
