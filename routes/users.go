@@ -151,7 +151,7 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 	}).Methods("GET")
 
 	// Define route to update the status of a fee to PAID
-	router.HandleFunc("/api/v1/mb/fees/{nif}", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/mb/fees/{id}", func(w http.ResponseWriter, r *http.Request) {
 		api.PayFee(client, dbName, os.Getenv("FEES_COLLECTION"), w, r)
 	}).Methods("PUT")
 }
