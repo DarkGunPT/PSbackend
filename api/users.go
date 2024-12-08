@@ -366,6 +366,7 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 		http.Error(w, "No fields to update", http.StatusBadRequest)
 		return
 	}
+	//
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
