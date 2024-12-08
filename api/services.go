@@ -516,10 +516,20 @@ func GetUpcommingAppointments(client *mongo.Client, dbName, appointmentCollectio
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
 
+		if time.Now().After(appointment.End) {
+			appointment.Status = "COMPLETED"
+			filter := bson.M{"_id": appointment.ID}
+			update := bson.M{"$set": bson.M{"status": "COMPLETED"}}
+			_, err := collection.UpdateOne(ctx, filter, update)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
 		if appointment.Status == "SCHEDULED" {
 			appointments = append(appointments, appointment)
 		}
-
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -558,6 +568,18 @@ func GetClientUpcommingAppointments(client *mongo.Client, dbName, appointmentCol
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
+
+		if time.Now().After(appointment.End) {
+			appointment.Status = "COMPLETED"
+			filter := bson.M{"_id": appointment.ID}
+			update := bson.M{"$set": bson.M{"status": "COMPLETED"}}
+			_, err := collection.UpdateOne(ctx, filter, update)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
 		if appointment.Client.NIF == nifInt && appointment.Status == "SCHEDULED" {
 			appointments = append(appointments, appointment)
 		}
@@ -598,6 +620,18 @@ func GetTechUpcommingAppointments(client *mongo.Client, dbName, appointmentColle
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
+
+		if time.Now().After(appointment.End) {
+			appointment.Status = "COMPLETED"
+			filter := bson.M{"_id": appointment.ID}
+			update := bson.M{"$set": bson.M{"status": "COMPLETED"}}
+			_, err := collection.UpdateOne(ctx, filter, update)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
 		if appointment.Provider.NIF == nifInt && appointment.Status == "SCHEDULED" {
 			appointments = append(appointments, appointment)
 		}
@@ -638,6 +672,18 @@ func GetClientHistoryAppointments(client *mongo.Client, dbName, appointmentColle
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
+
+		if time.Now().After(appointment.End) {
+			appointment.Status = "COMPLETED"
+			filter := bson.M{"_id": appointment.ID}
+			update := bson.M{"$set": bson.M{"status": "COMPLETED"}}
+			_, err := collection.UpdateOne(ctx, filter, update)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
 		if appointment.Client.NIF == nifInt && appointment.Status == "COMPLETED" || appointment.Status == "CANCELED" {
 			appointments = append(appointments, appointment)
 		}
@@ -678,6 +724,18 @@ func GetTechHistoryAppointments(client *mongo.Client, dbName, appointmentCollect
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
+
+		if time.Now().After(appointment.End) {
+			appointment.Status = "COMPLETED"
+			filter := bson.M{"_id": appointment.ID}
+			update := bson.M{"$set": bson.M{"status": "COMPLETED"}}
+			_, err := collection.UpdateOne(ctx, filter, update)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
 		if appointment.Client.NIF == nifInt && appointment.Status == "COMPLETED" || appointment.Status == "CANCELED" {
 			appointments = append(appointments, appointment)
 		}
@@ -706,6 +764,17 @@ func GetHistoryAppointments(client *mongo.Client, dbName, appointmentCollection 
 	for cursor.Next(ctx) {
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
+
+		if time.Now().After(appointment.End) {
+			appointment.Status = "COMPLETED"
+			filter := bson.M{"_id": appointment.ID}
+			update := bson.M{"$set": bson.M{"status": "COMPLETED"}}
+			_, err := collection.UpdateOne(ctx, filter, update)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
 
 		if appointment.Status == "COMPLETED" || appointment.Status == "CANCELED" {
 			appointments = append(appointments, appointment)
