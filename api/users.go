@@ -309,7 +309,6 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 		Password     string               `json:"password" bson:"password"`
 		NIF          int                  `json:"nif" bson:"nif"`
 		Phone        int                  `json:"phone" bson:"phone"`
-		Email        string               `json:"email" bson:"email"`
 		Role         []models.Role        `json:"role" bson:"role"`
 		ServiceTypes []models.ServiceType `json:"service_types" bson:"service_types"`
 		Locality     string               `json:"locality" bson:"locality"`
