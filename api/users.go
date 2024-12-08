@@ -343,7 +343,7 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 		updateFields["password"] = requestBody.Password
 	}
 	if parsedNif != 0 {
-		updateFields["nif"] = parsedNif
+		updateFields["nif"] = requestBody.NIF
 	}
 	if parsedPhone != 0 {
 		updateFields["phone"] = parsedPhone
