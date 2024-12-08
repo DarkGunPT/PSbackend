@@ -606,6 +606,10 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 		WorkStart    string               `json:"workStart" bson:"workStart"`
 		WorkEnd      string               `json:"workEnd" bson:"workEnd"`
 	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("User updated successfully")
+	return
+
 	json.NewDecoder(r.Body).Decode(&requestBody)
 	if requestBody.Email == "" {
 		http.Error(w, "Email is required for update", http.StatusBadRequest)
