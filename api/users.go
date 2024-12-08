@@ -633,13 +633,13 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 
 	nif, err := strconv.ParseInt(requestBody.NIF, 10, 64)
 	if err != nil {
-		http.Error(w, "Invalid NIF format", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	phone, err := strconv.ParseInt(requestBody.Phone, 10, 64)
 	if err != nil {
-		http.Error(w, "Invalid Phone format", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
