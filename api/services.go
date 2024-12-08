@@ -820,7 +820,7 @@ func GetAppointmentsByPrice(client *mongo.Client, dbName, appointmentCollection 
 		var appointment models.Appointment
 		cursor.Decode(&appointment)
 
-		if appointment.ServiceName == requestBody.ServiceType && appointment.TotalPrice >= requestBody.Min && appointment.TotalPrice < requestBody.Min {
+		if appointment.ServiceName == requestBody.ServiceType && appointment.TotalPrice >= requestBody.Min && appointment.TotalPrice <= requestBody.Max {
 			appointments = append(appointments, appointment)
 		}
 	}
