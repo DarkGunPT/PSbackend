@@ -425,7 +425,7 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		return
 	}
 
-	for i := range cli.Role {
+	/*for i := range cli.Role {
 		if cli.Role[i].Name == "CLIENT" {
 			cli.Role[i].ServicesDone++
 		}
@@ -461,7 +461,7 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 	if update.MatchedCount == 0 {
 		http.Error(w, "Provider not found to update", http.StatusNotFound)
 		return
-	}
+	}*/
 
 	jsonResponse := map[string]interface{}{
 		"message": "Appointment created successfully",
@@ -828,6 +828,59 @@ func GetAppointmentsByPrice(client *mongo.Client, dbName, appointmentCollection 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(appointments)
 }
+
+/*
+// GetHistoryAppointments handles GET requests to get the list of appointments already CLOSED
+func GetServicesByPrice(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		ServiceType string  `json:"service_type"`
+		Max         float64 `json:"max"`
+		Min         float64 `json:"min"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var users []models.User
+
+	collection := client.Database(dbName).Collection(userCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var resultUsers []models.User
+	var userCount int
+	var serviceCount int
+	var existed bool
+	for cursor.Next(ctx) {
+		var user models.User
+		cursor.Decode(&user)
+
+		users = append(users, user)
+		for _, service := range user.ServiceTypes {
+			if service.Name == requestBody.ServiceType && service.Price >= requestBody.Min && service.Price <= requestBody.Max {
+				resultUsers[userCount].ServiceTypes[serviceCount] = service
+				existed = true
+				serviceCount++
+			}
+		}
+		if existed {
+			userCount++
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(appointments)
+	}
+}*/
 
 func DeleteAppointment(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
