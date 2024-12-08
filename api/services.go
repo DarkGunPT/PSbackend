@@ -738,7 +738,7 @@ func GetTechHistoryAppointments(client *mongo.Client, dbName, appointmentCollect
 			}
 		}
 
-		if appointment.Client.NIF == nifInt && appointment.Status == "COMPLETED" || appointment.Status == "CANCELED" {
+		if appointment.Provider.NIF == nifInt && appointment.Status == "COMPLETED" || appointment.Status == "CANCELED" {
 			appointments = append(appointments, appointment)
 		}
 	}
