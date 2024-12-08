@@ -17,11 +17,11 @@ import (
 )
 
 // GetServices handles GET requests to get the list of services
-func GetServices(client *mongo.Client, dbName, serviceCollection string, w http.ResponseWriter, r *http.Request) {
+func GetServices(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var services []models.ServiceType
+	var users []models.User
 
-	collection := client.Database(dbName).Collection(serviceCollection)
+	collection := client.Database(dbName).Collection(userCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	cursor, err := collection.Find(ctx, bson.M{})
@@ -32,13 +32,15 @@ func GetServices(client *mongo.Client, dbName, serviceCollection string, w http.
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		var service models.ServiceType
-		cursor.Decode(&service)
-		services = append(services, service)
+		var user models.User
+		cursor.Decode(&user)
+
+		users = append(users, user)
+
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(services)
+	json.NewEncoder(w).Encode(users)
 }
 
 // GetService handles GET requests to get one specific service
