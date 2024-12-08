@@ -126,7 +126,7 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection, userCollecti
 	}).Methods("GET")
 
 	// Define route to get appointments in a price range
-	router.HandleFunc("/api/v1/mb/services/appointments/price", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/bo/services/appointments/price", func(w http.ResponseWriter, r *http.Request) {
 		api.GetAppointmentsByPrice(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
 	}).Methods("GET")
 
