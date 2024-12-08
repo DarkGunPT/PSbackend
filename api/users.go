@@ -368,9 +368,22 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 		http.Error(w, "No fields to update", http.StatusBadRequest)
 		return
 	}
-	//
 
+	var user models.User
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err = collection.FindOne(ctx, bson.M{"nif": nif}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	result, err := collection.UpdateOne(ctx, bson.M{"nif": nif}, bson.M{"$set": updateFields}, options.Update().SetUpsert(true))
 	if err != nil {
@@ -379,7 +392,7 @@ func UpdateUser(client *mongo.Client, dbName, userCollection string, w http.Resp
 	}
 
 	if result.ModifiedCount == 0 {
-		http.Error(w, "User not found", http.StatusNotFound)
+		http.Error(w, "User wasn't modified", http.StatusOK)
 		return
 	}
 
