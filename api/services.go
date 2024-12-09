@@ -89,6 +89,8 @@ func GetFilteredServiceType(client *mongo.Client, dbName, serviceCollection stri
 		return
 	}
 
+	filter.ServiceType = strings.ToUpper(filter.ServiceType)
+
 	collection := client.Database(dbName).Collection(serviceCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -127,7 +129,7 @@ func UpdateService(client *mongo.Client, dbName, serviceCollection string, w htt
 	}
 
 	if service.Name != "" {
-		updateFields["name"] = service.Name
+		updateFields["name"] = strings.ToUpper(service.Name)
 	}
 
 	if len(updateFields) == 0 {
@@ -154,6 +156,7 @@ func UpdateService(client *mongo.Client, dbName, serviceCollection string, w htt
 func CreateServiceType(client *mongo.Client, dbName, serviceTypeCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var serviceType models.ServiceType
+	serviceType.Name = strings.ToUpper(serviceType.Name)
 
 	json.NewDecoder(r.Body).Decode(&serviceType)
 	serviceType.ID = primitive.NewObjectID()
@@ -210,7 +213,7 @@ func UpdateServiceType(client *mongo.Client, dbName, serviceTypeCollection strin
 	var updateFields bson.M = bson.M{}
 
 	if serviceType.Name != "" {
-		updateFields["name"] = serviceType.Name
+		updateFields["name"] = strings.ToUpper(serviceType.Name)
 	}
 
 	if len(updateFields) == 0 {
@@ -325,6 +328,8 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
+
+	requestBody.ServiceName = strings.ToUpper(requestBody.ServiceName)
 
 	var cli models.User
 
@@ -829,8 +834,7 @@ func GetAppointmentsByPrice(client *mongo.Client, dbName, appointmentCollection 
 	json.NewEncoder(w).Encode(appointments)
 }
 
-/*
-// GetHistoryAppointments handles GET requests to get the list of appointments already CLOSED
+// GetServicesByPrice handles GET requests to get the list of appointments already CLOSED
 func GetServicesByPrice(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var requestBody struct {
@@ -845,8 +849,6 @@ func GetServicesByPrice(client *mongo.Client, dbName, userCollection string, w h
 		return
 	}
 
-	var users []models.User
-
 	collection := client.Database(dbName).Collection(userCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -857,30 +859,24 @@ func GetServicesByPrice(client *mongo.Client, dbName, userCollection string, w h
 	}
 	defer cursor.Close(ctx)
 
-	var resultUsers []models.User
-	var userCount int
-	var serviceCount int
-	var existed bool
+	var temporaryUser models.User
+	resultUsers := make([]models.User, 0)
 	for cursor.Next(ctx) {
 		var user models.User
 		cursor.Decode(&user)
+		temporaryUser = user
 
-		users = append(users, user)
 		for _, service := range user.ServiceTypes {
 			if service.Name == requestBody.ServiceType && service.Price >= requestBody.Min && service.Price <= requestBody.Max {
-				resultUsers[userCount].ServiceTypes[serviceCount] = service
-				existed = true
-				serviceCount++
+				temporaryUser.ServiceTypes = []models.ServiceType{}
+				temporaryUser.ServiceTypes = append(temporaryUser.ServiceTypes, service)
+				resultUsers = append(resultUsers, temporaryUser)
 			}
 		}
-		if existed {
-			userCount++
-		}
-
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(appointments)
 	}
-}*/
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resultUsers)
+}
 
 func DeleteAppointment(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

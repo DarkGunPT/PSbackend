@@ -131,6 +131,11 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection, userCollecti
 	}).Methods("GET")
 
 	// Define route to get appointments in a price range
+	router.HandleFunc("/api/v1/bo/services/price", func(w http.ResponseWriter, r *http.Request) {
+		api.GetServicesByPrice(client, dbName, userCollection, w, r)
+	}).Methods("GET")
+
+	// Define route to get appointments in a price range
 	router.HandleFunc("/api/v1/mb/services/appointments/{id}", func(w http.ResponseWriter, r *http.Request) {
 		api.DeleteAppointment(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
 	}).Methods("DELETE")
