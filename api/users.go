@@ -933,7 +933,7 @@ func OrderClients(client *mongo.Client, dbName, userCollection string, w http.Re
 }
 
 // GetUser handles GET requests to get one specific user by NIF
-func GetFees(client *mongo.Client, dbName, feesCollection string, w http.ResponseWriter, r *http.Request) {
+func GetFeesByNif(client *mongo.Client, dbName, feesCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	vars := mux.Vars(r)
@@ -974,6 +974,125 @@ func GetFees(client *mongo.Client, dbName, feesCollection string, w http.Respons
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(fees)
 }
+
+// GetUser handles GET requests to get one specific user by NIF
+func GetFees(client *mongo.Client, dbName, feesCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	collection := client.Database(dbName).Collection(feesCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	fees := make([]models.Fee, 0)
+
+	for cursor.Next(ctx) {
+		var fee models.Fee
+		cursor.Decode(&fee)
+		fees = append(fees, fee)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(fees)
+}
+
+func CreateFee(client *mongo.Client, dbName, feesCollection string, userCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var requestBody struct {
+		NIF   int     `json:"nif"`
+		Value float64 `json:"value"`
+		Day   string  `json:"day"`
+		Month string  `json:"month"`
+		Year  string  `json:"year"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+	collection := client.Database(dbName).Collection(userCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err = collection.FindOne(ctx, bson.M{"nif": requestBody.NIF}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var servicesDone int
+
+	for _, role := range user.Role {
+		if role.Name == "TECH" {
+			servicesDone = role.ServicesDone
+		}
+	}
+
+	fee := models.Fee{
+		NIF:      int64(requestBody.NIF),
+		Value:    requestBody.Value,
+		JobsDone: int64(servicesDone),
+		Paid:     false,
+		Day:      requestBody.Day,
+		Month:    requestBody.Month,
+		Year:     requestBody.Year,
+	}
+
+	collection = client.Database(dbName).Collection(feesCollection)
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	result, err := collection.InsertOne(ctx, fee)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
+}
+
+/*
+// CreateServiceType handles POST requests to create a specific service type
+func CreateServiceType(client *mongo.Client, dbName, serviceTypeCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var serviceType models.ServiceType
+	serviceType.Name = strings.ToUpper(serviceType.Name)
+
+	json.NewDecoder(r.Body).Decode(&serviceType)
+	serviceType.ID = primitive.NewObjectID()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	collection := client.Database(dbName).Collection(serviceTypeCollection)
+
+	result, err := collection.InsertOne(ctx, serviceType)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
+}
+*/
 
 func PayFee(client *mongo.Client, dbName, feesCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
