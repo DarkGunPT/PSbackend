@@ -146,12 +146,12 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 	}).Methods("GET")
 
 	// Define route to get fees
-	router.HandleFunc("/api/v1/mb/fees", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/bo/fees", func(w http.ResponseWriter, r *http.Request) {
 		api.GetFees(client, dbName, os.Getenv("FEES_COLLECTION"), w, r)
 	}).Methods("GET")
 
 	// Define route to get fees
-	router.HandleFunc("/api/v1/mb/fees", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/v1/bo/fees", func(w http.ResponseWriter, r *http.Request) {
 		api.CreateFee(client, dbName, os.Getenv("FEES_COLLECTION"), userCollection, w, r)
 	}).Methods("POST")
 
