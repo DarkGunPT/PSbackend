@@ -166,38 +166,38 @@ This repository contains the backend code for FixFinder, a platform designed to 
 ### Services
 
 1. **GET /api/v1/bo/services:** Retrieves all services for Back Office.
-2. **GET /api/v1/mb/services:** Retrieves all services for Mobile App.
+1. **GET /api/v1/mb/services:** Retrieves all services for Mobile App.
 
-3. **GET /api/v1/bo/services/id:** Retrieves a service by ID for Back Office.
-4. **GET /api/v1/mb/services/id:** Retrieves a service by ID for Mobile App.
+1. **GET /api/v1/bo/services/id:** Retrieves a service by ID for Back Office.
+1. **GET /api/v1/mb/services/id:** Retrieves a service by ID for Mobile App.
 
-5. **GET /api/v1/bo/services/service-type:** Retrieves all filtered services by type for Back Office.
-6. **GET /api/v1/mb/services/service-type:** Retrieves all filtered services by type for Mobile App.
+1. **GET /api/v1/bo/services/service-type:** Retrieves all filtered services by type for Back Office.
+1. **GET /api/v1/mb/services/service-type:** Retrieves all filtered services by type for Mobile App.
     * Request body:
       ```json
       {
         "name": string
       }
       ```
-7. **PUT /api/v1/bo/services:** Updates a service for Back Office.
-8. **PUT /api/v1/mb/services:** Updates a service for Mobile App.
+1. **PUT /api/v1/bo/services:** Updates a service for Back Office.
+1. **PUT /api/v1/mb/services:** Updates a service for Mobile App.
     * Request body:
       ```json
       {
         "price": string or "name": string
       }
       ```
-9. **POST /api/v1/bo/service-type:** Creates a new specific service type for Back Office.
+1. **POST /api/v1/bo/service-type:** Creates a new specific service type for Back Office.
     * Request body:
       ```json
       {
         "name": string
       }
       ```
-10. **GET /api/v1/bo/service-type:** Retrieves all service types for Back Office.
-11. **GET /api/v1/mb/service-type:** Retrieves all service types for Mobile App.
+1. **GET /api/v1/bo/service-type:** Retrieves all service types for Back Office.
+1. **GET /api/v1/mb/service-type:** Retrieves all service types for Mobile App.
 
-12. **PUT /api/v1/bo/service-type:** Updates a service type for Back Office.
+1. **PUT /api/v1/bo/service-type:** Updates a service type for Back Office.
     * Request body:
       ```json
       {
@@ -205,22 +205,22 @@ This repository contains the backend code for FixFinder, a platform designed to 
         "name": string
       }
       ```
-13. **DELETE /api/v1/bo/service-type:** Deletes a service type by ID for Back Office.
+1. **DELETE /api/v1/bo/service-type:** Deletes a service type by ID for Back Office.
     * Request body:
       ```json
       {
         "id": string
       }
       ```
-14. **GET /api/v1/mb/services/technicians:** Retrieves services by technician for Mobile App.
-15. **GET /api/v1/bo/services/technicians:** Retrieves services by technician for Back Office.
+1. **GET /api/v1/mb/services/technicians:** Retrieves services by technician for Mobile App.
+1. **GET /api/v1/bo/services/technicians:** Retrieves services by technician for Back Office.
     * Request body:
       ```json
       {
         "employee_id": string
       }
       ```
-16. **POST /api/v1/mb/services/appointment:** Updates service with a new appointment for Mobile App.
+1. **POST /api/v1/mb/services/appointment:** Updates service with a new appointment for Mobile App.
     * Request body:
       ```json
       {
@@ -236,20 +236,20 @@ This repository contains the backend code for FixFinder, a platform designed to 
         "totalPrice": string
       }
       ```
-17. **GET /api/v1/bo/services/appointments:** Retrieves appointments for Back Office.
+1. **GET /api/v1/bo/services/appointments:** Retrieves appointments for Back Office.
 
-18. **GET /api/v1/bo/services/appointments/upcoming:** Retrieves all upcoming appointments of a Technician.
+1. **GET /api/v1/bo/services/appointments/upcoming:** Retrieves all upcoming appointments of a Technician.
 
-19. **GET /api/v1/mb/services/appointments/upcoming/client/{nif}:** Retrieves all upcoming appointments of a Client.
+1. **GET /api/v1/mb/services/appointments/upcoming/client/{nif}:** Retrieves all upcoming appointments of a Client.
 
-20. **GET /api/v1/mb/services/appointments/upcoming/technician/{nif}:** Retrieves all upcoming appointments of a Technician.
+1. **GET /api/v1/mb/services/appointments/upcoming/technician/{nif}:** Retrieves all upcoming appointments of a Technician.
 
-21. **GET /api/v1/bo/services/appointments/history:** Retrieves history of appointments.
+1. **GET /api/v1/bo/services/appointments/history:** Retrieves history of appointments.
 
-22. **GET /api/v1/mb/services/appointments/history/client/{nif}:** Retrieves history of appointments of a Client.
-23. **GET /api/v1/mb/services/appointments/history/technician/{nif}:** Retrieves history of appointments of a Technician.
+1. **GET /api/v1/mb/services/appointments/history/client/{nif}:** Retrieves history of appointments of a Client.
+1. **GET /api/v1/mb/services/appointments/history/technician/{nif}:** Retrieves history of appointments of a Technician.
 
-24. **GET /api/v1/bo/services/appointments/price:** Retrieves appointments in a price range.
+1. **GET /api/v1/bo/services/appointments/price:** Retrieves appointments in a price range.
     * Request body:
       ```json
       {
@@ -258,7 +258,7 @@ This repository contains the backend code for FixFinder, a platform designed to 
         "min": float
       }
       ```
-25. **GET /api/v1/bo/services/price:** Retrieves services in a price range.
+1. **GET /api/v1/bo/services/price:** Retrieves services in a price range.
     * Request body:
       ```json
       {
@@ -267,4 +267,4 @@ This repository contains the backend code for FixFinder, a platform designed to 
         "min": float
       }
       ```
-26. **DELETE /api/v1/mb/services/appointments/{id}:** Deletes an appointment by ID for Mobile App.
+1. **DELETE /api/v1/mb/services/appointments/{id}:** Deletes an appointment by ID for Mobile App.
