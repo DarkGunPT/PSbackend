@@ -917,3 +917,35 @@ func DeleteAppointment(client *mongo.Client, dbName, appointmentCollection strin
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("Appointment canceled successfully")
 }
+
+// GetAppointments handles GET requests to get the list of appointments
+func GetCountAppointments(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	collection := client.Database(dbName).Collection(appointmentCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var total int
+
+	for cursor.Next(ctx) {
+		var appointment models.Appointment
+		cursor.Decode(&appointment)
+		total++
+	}
+
+	jsonResponse := map[string]interface{}{
+		"message": "Counted every existent Appointment",
+		"count":   total,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(jsonResponse)
+}

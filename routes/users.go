@@ -169,9 +169,4 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 	router.HandleFunc("/api/v1/bo/count-services-performed", func(w http.ResponseWriter, r *http.Request) {
 		api.GetServicesPerformed(client, dbName, userCollection, w, r)
 	}).Methods("GET")
-
-	// Define route to get fees of a technician
-	router.HandleFunc("/api/v1/bo/count-services-received", func(w http.ResponseWriter, r *http.Request) {
-		api.GetServicesReceived(client, dbName, userCollection, w, r)
-	}).Methods("GET")
 }

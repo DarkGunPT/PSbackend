@@ -1237,36 +1237,3 @@ func GetServicesPerformed(client *mongo.Client, dbName, userCollection string, w
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(jsonResponse)
 }
-
-// GetUsers handles GET requests to get the list of users
-func GetServicesReceived(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	collection := client.Database(dbName).Collection(userCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	cursor, err := collection.Find(ctx, bson.M{})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer cursor.Close(ctx)
-	var total int
-	for cursor.Next(ctx) {
-		var user models.User
-		cursor.Decode(&user)
-		for _, role := range user.Role {
-			if role.Name == "CLIENT" {
-				total = total + role.ServicesDone
-			}
-		}
-	}
-
-	jsonResponse := map[string]interface{}{
-		"message": "Counted every Service received",
-		"count":   total,
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(jsonResponse)
-}

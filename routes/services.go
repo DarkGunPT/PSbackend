@@ -140,4 +140,8 @@ func ServiceRoutes(client *mongo.Client, dbName, serviceCollection, userCollecti
 		api.DeleteAppointment(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
 	}).Methods("DELETE")
 
+	// Define route to get fees of a technician
+	router.HandleFunc("/api/v1/bo/count-appointments", func(w http.ResponseWriter, r *http.Request) {
+		api.GetCountAppointments(client, dbName, os.Getenv("APPOINTMENT_COLLECTION"), w, r)
+	}).Methods("GET")
 }
