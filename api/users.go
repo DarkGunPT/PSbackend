@@ -1148,15 +1148,76 @@ func generateInvoice(invoice models.Fee, client *mongo.Client, dbName, userColle
 		return
 	}
 
-	pdf.Cell(nil, "FixFinder - Invoice of Monthly Fee")
+	pdf.Cell(nil, "FixFinder Solutions - Invoice of Monthly Fee")
 	pdf.Br(20)
-	pdf.Cell(nil, fmt.Sprintf("%s of %s, %s", invoice.Day, invoice.Month, invoice.Year))
+	pdf.Br(20)
+	pdf.Cell(nil, "Address: Rua da Quinta das Flores, nº.23, Coimbra, 3040-100")
+	pdf.Br(20)
+	pdf.Cell(nil, fmt.Sprintf("Phone: %d | Email: %s", user.Phone, user.Email))
+	pdf.Br(20)
+	pdf.Cell(nil, "Website: www.fixfinder.com")
+	pdf.Br(20)
+	pdf.SetLineWidth(2)
+	pdf.SetLineType("dashed")
+	pdf.Line(10, 110, 585, 110)
+	pdf.Br(20)
+	pdf.Cell(nil, fmt.Sprintf("Invoice Date: %s of %s, %s", invoice.Day, invoice.Month, invoice.Year))
+	pdf.Br(20)
+	pdf.Cell(nil, fmt.Sprintf("Invoice Number: %s", invoice.ID.Hex()))
+	pdf.Br(20)
+	pdf.Cell(nil, "Billed to:")
+	pdf.Br(20)
+	pdf.Cell(nil, fmt.Sprintf("Name: %s", user.Name))
+	pdf.Br(20)
+	pdf.Cell(nil, fmt.Sprintf("Address: %s", user.Locality))
 	pdf.Br(20)
 	pdf.Cell(nil, fmt.Sprintf("NIF: %d", invoice.NIF))
 	pdf.Br(20)
-	pdf.Cell(nil, fmt.Sprintf("Value: %f", invoice.Value))
+	pdf.Cell(nil, fmt.Sprintf("Email: %s", user.Email))
 	pdf.Br(20)
-	pdf.Cell(nil, "Status: Paid")
+	pdf.Br(20)
+
+	tableStartY := 280.0
+	marginLeft := 10.0
+	table := pdf.NewTableLayout(marginLeft, tableStartY, 25, 1)
+	table.AddColumn("Description", 100, "left")
+	table.AddColumn("Date", 120, "left")
+	table.AddColumn("Jobs Done", 50, "right")
+	table.AddColumn("Amount", 50, "right")
+	value := fmt.Sprintf("%.2f", invoice.Value)
+	jobsDone := fmt.Sprintf("%d", invoice.JobsDone)
+	table.AddRow([]string{"Service Fee", fmt.Sprintf("%s of %s, %s", invoice.Day, invoice.Month, invoice.Year), jobsDone, value})
+	table.SetTableStyle(gopdf.CellStyle{
+		BorderStyle: gopdf.BorderStyle{
+			Top:      true,
+			Left:     true,
+			Bottom:   true,
+			Right:    true,
+			Width:    1.0,
+			RGBColor: gopdf.RGBColor{R: 0, G: 0, B: 0},
+		},
+		FillColor: gopdf.RGBColor{R: 255, G: 255, B: 255},
+		TextColor: gopdf.RGBColor{R: 0, G: 0, B: 0},
+		FontSize:  10,
+	})
+	table.SetHeaderStyle(gopdf.CellStyle{
+		BorderStyle: gopdf.BorderStyle{
+			Top:      true,
+			Left:     true,
+			Bottom:   true,
+			Right:    true,
+			Width:    2.0,
+			RGBColor: gopdf.RGBColor{R: 0, G: 0, B: 0},
+		},
+		FillColor: gopdf.RGBColor{R: 63, G: 194, B: 89},
+		TextColor: gopdf.RGBColor{R: 255, G: 255, B: 255},
+		Font:      "font2",
+		FontSize:  12,
+	})
+	table.DrawTable()
+	pdf.Br(20)
+	pdf.Cell(nil, fmt.Sprintf("Total: %.2f", invoice.Value))
+
 	pdfName := fmt.Sprintf("%s.pdf", invoice.ID.Hex())
 	pdfPath := filepath.Join(currentDir, "api", "invoices", pdfName)
 	pdf.WritePdf(pdfPath)
