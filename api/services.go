@@ -430,21 +430,26 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 		return
 	}
 
-	/*for i := range cli.Role {
+	var updateCli bson.M = bson.M{}
+	for i := range cli.Role {
 		if cli.Role[i].Name == "CLIENT" {
 			cli.Role[i].ServicesDone++
 		}
 	}
 
+	updateCli["role"] = cli.Role
+	var updateTech bson.M = bson.M{}
 	for i := range provider.Role {
-		if cli.Role[i].Name == "TECH" {
-			cli.Role[i].ServicesDone++
+		if provider.Role[i].Name == "TECH" {
+			provider.Role[i].ServicesDone++
 		}
 	}
 
+	updateTech["role"] = provider.Role
+	collection = client.Database(dbName).Collection(userCollection)
 	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	update, err := collection.UpdateOne(ctx, bson.M{"email": cli.Email}, bson.M{"$set": bson.M{"role": cli.Role}})
+	update, err := collection.UpdateOne(ctx, bson.M{"email": cli.Email}, bson.M{"$set": updateCli})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -466,7 +471,7 @@ func InsertAppointment(client *mongo.Client, dbName, serviceCollection, userColl
 	if update.MatchedCount == 0 {
 		http.Error(w, "Provider not found to update", http.StatusNotFound)
 		return
-	}*/
+	}
 
 	jsonResponse := map[string]interface{}{
 		"message": "Appointment created successfully",

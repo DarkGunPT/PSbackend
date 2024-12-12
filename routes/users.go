@@ -162,6 +162,16 @@ func UserRoutes(client *mongo.Client, dbName, userCollection string, router *mux
 
 	// Define route to update the status of a fee to PAID
 	router.HandleFunc("/api/v1/mb/fees/{id}", func(w http.ResponseWriter, r *http.Request) {
-		api.PayFee(client, dbName, os.Getenv("FEES_COLLECTION"), w, r)
+		api.PayFee(client, dbName, os.Getenv("FEES_COLLECTION"), userCollection, w, r)
 	}).Methods("PUT")
+
+	// Define route to get fees of a technician
+	router.HandleFunc("/api/v1/bo/count-services-performed", func(w http.ResponseWriter, r *http.Request) {
+		api.GetServicesPerformed(client, dbName, userCollection, w, r)
+	}).Methods("GET")
+
+	// Define route to get fees of a technician
+	router.HandleFunc("/api/v1/bo/count-services-received", func(w http.ResponseWriter, r *http.Request) {
+		api.GetServicesReceived(client, dbName, userCollection, w, r)
+	}).Methods("GET")
 }

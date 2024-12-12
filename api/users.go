@@ -3,11 +3,14 @@ package api
 import (
 	"PSbackend/models"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"time"
@@ -15,6 +18,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"github.com/signintech/gopdf"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -662,20 +666,20 @@ func RegisterCompletion(client *mongo.Client, dbName, userCollection string, w h
 				Name: "TECH",
 			},
 		}
-		start, err := time.Parse("2006-01-02T15:04:05.999-07:00", requestBody.WorkStart)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		updateFields["workStart"] = start
-		end, err := time.Parse("2006-01-02T15:04:05.999-07:00", requestBody.WorkEnd)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		updateFields["workEnd"] = end
 	}
 
+	start, err := time.Parse("2006-01-02T15:04:05.999-07:00", requestBody.WorkStart)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	updateFields["workStart"] = start
+	end, err := time.Parse("2006-01-02T15:04:05.999-07:00", requestBody.WorkEnd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	updateFields["workEnd"] = end
 	updateFields["service_types"] = requestBody.ServiceTypes
 	updateFields["locality"] = requestBody.Locality
 	updateFields["is_active"] = true
@@ -1069,32 +1073,7 @@ func CreateFee(client *mongo.Client, dbName, feesCollection string, userCollecti
 	json.NewEncoder(w).Encode(result)
 }
 
-/*
-// CreateServiceType handles POST requests to create a specific service type
-func CreateServiceType(client *mongo.Client, dbName, serviceTypeCollection string, w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var serviceType models.ServiceType
-	serviceType.Name = strings.ToUpper(serviceType.Name)
-
-	json.NewDecoder(r.Body).Decode(&serviceType)
-	serviceType.ID = primitive.NewObjectID()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	collection := client.Database(dbName).Collection(serviceTypeCollection)
-
-	result, err := collection.InsertOne(ctx, serviceType)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(result)
-}
-*/
-
-func PayFee(client *mongo.Client, dbName, feesCollection string, w http.ResponseWriter, r *http.Request) {
+func PayFee(client *mongo.Client, dbName, feesCollection, userCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	vars := mux.Vars(r)
@@ -1114,17 +1093,180 @@ func PayFee(client *mongo.Client, dbName, feesCollection string, w http.Response
 	defer cancel()
 
 	update := bson.M{"$set": bson.M{"paid": true}}
-	result, err := collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetUpsert(true)
+	var updatedFee models.Fee
+	err = collection.FindOneAndUpdate(ctx, bson.M{"_id": objectID}, update, opts).Decode(&updatedFee)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "User not found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	generateInvoice(updatedFee, client, dbName, userCollection)
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("Fee paid successfully")
+}
+
+func generateInvoice(invoice models.Fee, client *mongo.Client, dbName, userCollection string) {
+	var user models.User
+	collection := client.Database(dbName).Collection(userCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err := collection.FindOne(ctx, bson.M{"nif": invoice.NIF}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			log.Print(err.Error())
+			return
+		}
+		log.Print(err.Error())
+		return
+	}
+
+	pdf := gopdf.GoPdf{}
+	pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4})
+	pdf.AddPage()
+	currentDir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fontPath := filepath.Join(currentDir, "api", "fonts", "BebasNeue-Regular.ttf")
+	err = pdf.AddTTFFont("BebasNeue-Regular", fontPath)
+	if err != nil {
+		log.Print(err.Error())
+		return
+	}
+
+	err = pdf.SetFont("BebasNeue-Regular", "", 14)
+	if err != nil {
+		log.Print(err.Error())
+		return
+	}
+
+	pdf.Cell(nil, "FixFinder - Invoice of Monthly Fee")
+	pdf.Br(20)
+	pdf.Cell(nil, fmt.Sprintf("%s of %s, %s", invoice.Day, invoice.Month, invoice.Year))
+	pdf.Br(20)
+	pdf.Cell(nil, fmt.Sprintf("NIF: %d", invoice.NIF))
+	pdf.Br(20)
+	pdf.Cell(nil, fmt.Sprintf("Value: %f", invoice.Value))
+	pdf.Br(20)
+	pdf.Cell(nil, "Status: Paid")
+	pdfName := fmt.Sprintf("%s.pdf", invoice.ID.Hex())
+	pdfPath := filepath.Join(currentDir, "api", "invoices", pdfName)
+	pdf.WritePdf(pdfPath)
+
+	file, err := os.Open(pdfPath) // Replace with your invoice path
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	fileInfo, err := file.Stat()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fileContent := make([]byte, fileInfo.Size())
+	_, err = file.Read(fileContent)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	encodedFile := base64.StdEncoding.EncodeToString(fileContent)
+
+	attachment := mail.NewAttachment()
+	attachment.SetContent(encodedFile)
+	attachment.SetType("application/pdf")
+	attachment.SetFilename(pdfName)
+	attachment.SetDisposition("attachment")
+	from := mail.NewEmail("FixFinder", os.Getenv("FIXFINDER_EMAIL"))
+	to := mail.NewEmail("Provider", user.Email)
+	subject := fmt.Sprintf("FixFinder Invoice Fee %s, %s", invoice.Month, invoice.Year)
+	plainTextContent := "Making it easier to find technicians for certain domestic services​"
+	htmlContent := "<strong>Making it easier to find technicians for certain domestic services​</strong>"
+	message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
+	message.AddAttachment(attachment)
+	sendgrid := sendgrid.NewSendClient(os.Getenv("SENDGRID_APIKEY"))
+	response, err := sendgrid.Send(message)
+	if err != nil {
+		log.Print(err.Error())
+		return
+	}
+
+	if response.StatusCode >= 400 {
+		log.Printf("Failed to send email, status code: %d", response.StatusCode)
+		return
+	}
+}
+
+// GetUsers handles GET requests to get the list of users
+func GetServicesPerformed(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	collection := client.Database(dbName).Collection(userCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer cursor.Close(ctx)
+	var total int
+	for cursor.Next(ctx) {
+		var user models.User
+		cursor.Decode(&user)
+		for _, role := range user.Role {
+			if role.Name == "TECH" {
+				total = total + role.ServicesDone
+			}
+		}
+	}
 
-	if result.MatchedCount == 0 {
-		http.Error(w, "Fee not found", http.StatusNotFound)
-		return
+	jsonResponse := map[string]interface{}{
+		"message": "Counted every Service performed",
+		"count":   total,
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("Fee paid successfully")
+	json.NewEncoder(w).Encode(jsonResponse)
+}
+
+// GetUsers handles GET requests to get the list of users
+func GetServicesReceived(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	collection := client.Database(dbName).Collection(userCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+	var total int
+	for cursor.Next(ctx) {
+		var user models.User
+		cursor.Decode(&user)
+		for _, role := range user.Role {
+			if role.Name == "CLIENT" {
+				total = total + role.ServicesDone
+			}
+		}
+	}
+
+	jsonResponse := map[string]interface{}{
+		"message": "Counted every Service received",
+		"count":   total,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(jsonResponse)
 }
