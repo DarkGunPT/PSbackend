@@ -883,6 +883,55 @@ func GetServicesByPrice(client *mongo.Client, dbName, userCollection string, w h
 	json.NewEncoder(w).Encode(resultUsers)
 }
 
+// GetServicesByPrice handles GET requests to get the list of appointments already CLOSED
+func GetServicesByPriceQuery(client *mongo.Client, dbName, userCollection string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	serviceType := r.URL.Query().Get("service_type")
+	minStr := r.URL.Query().Get("min")
+	maxStr := r.URL.Query().Get("max")
+
+	min, err := strconv.ParseFloat(minStr, 64)
+	if err != nil {
+		http.Error(w, "Invalid min value", http.StatusBadRequest)
+		return
+	}
+
+	max, err := strconv.ParseFloat(maxStr, 64)
+	if err != nil {
+		http.Error(w, "Invalid max value", http.StatusBadRequest)
+		return
+	}
+
+	collection := client.Database(dbName).Collection(userCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var temporaryUser models.User
+	resultUsers := make([]models.User, 0)
+	for cursor.Next(ctx) {
+		var user models.User
+		cursor.Decode(&user)
+		temporaryUser = user
+
+		for _, service := range user.ServiceTypes {
+			if service.Name == serviceType && service.Price >= min && service.Price <= max {
+				temporaryUser.ServiceTypes = []models.ServiceType{}
+				temporaryUser.ServiceTypes = append(temporaryUser.ServiceTypes, service)
+				resultUsers = append(resultUsers, temporaryUser)
+			}
+		}
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resultUsers)
+}
+
 func DeleteAppointment(client *mongo.Client, dbName, appointmentCollection string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
