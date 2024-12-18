@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
@@ -15,17 +14,19 @@ import (
 	"PSbackend/models"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func setupRouter() *http.ServeMux {
+func setupRouter() (*http.ServeMux, *mongo.Client) {
 	router := http.NewServeMux()
-	ctx, _ := context.WithTimeout(context.Background(), time.Minute)
-	client, err := config.ConnectDB(ctx, os.Getenv("MONGO_URI"))
+	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	client, err := config.ConnectDB(ctx, "mongodb://localhost:27017")
 	if err != nil {
 		log.Fatal("Error connecting to mongodb:", err)
 	}
 
-	router.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
+	// Retrieves all users or deletes a user
+	router.HandleFunc("/api/v1/mb/users", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			GetUsers(client, "PSprojectTest", "Users", w, r)
 		} else if r.Method == http.MethodDelete {
@@ -33,116 +34,126 @@ func setupRouter() *http.ServeMux {
 		}
 	})
 
-	router.HandleFunc("/api/users/login", func(w http.ResponseWriter, r *http.Request) {
-		Login(client, "PSprojectTest", "Users", w, r)
+	// Retrieves all technicians
+	router.HandleFunc("/api/v1/mb/users/technicians", func(w http.ResponseWriter, r *http.Request) {
+		GetTechnicians(client, "PSprojectTest", "Users", w, r)
 	})
 
-	router.HandleFunc("/api/users/phone", func(w http.ResponseWriter, r *http.Request) {
+	// Retrieves a user by NIF
+	router.HandleFunc("/api/v1/bo/users/nif", func(w http.ResponseWriter, r *http.Request) {
 		GetUser(client, "PSprojectTest", "Users", w, r)
 	})
 
-	return router
-}
+	// Retrieves all clients
+	router.HandleFunc("/api/v1/mb/users/clients", func(w http.ResponseWriter, r *http.Request) {
+		GetClients(client, "PSprojectTest", "Users", w, r)
+	})
 
-func TestCreateUser(t *testing.T) {
-	router := setupRouter()
+	// Retrieves clients ordered by a filter
+	router.HandleFunc("/api/v1/bo/users/clients/order", func(w http.ResponseWriter, r *http.Request) {
+		OrderClients(client, "PSprojectTest", "Users", w, r)
+	})
 
-	user := models.User{
-		ID:       primitive.NewObjectID(),
-		Name:     "John Doe",
-		Password: "password123",
-		NIF:      210422113,
-		Phone:    1234567890,
-		Email:    "nuno.honorio2000@gmail.com",
-		Role: []models.Role{
-			{
-				Name: "Developer",
-			},
-		},
-		ServiceTypes: []models.ServiceType{
-			{
-				Name: "Developer",
-			},
-		},
-		Locality:      "Coimbra",
-		Rating:        4.5,
-		BlockServices: false,
-	}
-	userJSON, _ := json.Marshal(user)
+	// Retrieves all fees
+	router.HandleFunc("/api/v1/bo/fees", func(w http.ResponseWriter, r *http.Request) {
+		GetFees(client, "PSprojectTest", "Users", w, r)
+	})
 
-	req := httptest.NewRequest(http.MethodPost, "/api/users", bytes.NewBuffer(userJSON))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
+	// Retrieves the count of services performed
+	router.HandleFunc("/api/v1/bo/count-services-performed", func(w http.ResponseWriter, r *http.Request) {
+		GetServicesPerformed(client, "PSprojectTest", "Users", w, r)
+	})
 
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected status code 200, got %v", w.Code)
-	}
+	return router, client
 }
 
 func TestGetUsers(t *testing.T) {
-	router := setupRouter()
+	router, _ := setupRouter()
 
-	req := httptest.NewRequest(http.MethodGet, "/api/users", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/mb/users", nil)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected status code 200, got %v", w.Code)
-	}
-}
-
-func TestGetUser(t *testing.T) {
-	router := setupRouter()
-
-	body := map[string]interface{}{
-		"phone": 1234567890,
-	}
-	json, _ := json.Marshal(body)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/users/phone", bytes.NewBuffer(json))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected status code 200, got %v. Response: %s", w.Code, w.Body.String())
-	}
-}
-
-func TestLoginUser(t *testing.T) {
-	router := setupRouter()
-
-	loginData := map[string]interface{}{
-		"phone":    1234567890,
-		"password": "password123",
-	}
-	loginJSON, _ := json.Marshal(loginData)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/users/login", bytes.NewBuffer(loginJSON))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected status code 200, got %v. Response: %s", w.Code, w.Body.String())
 	}
 }
 
 func TestDeleteUser(t *testing.T) {
-	router := setupRouter()
+	router, client := setupRouter()
+
+	newUser := models.User{
+		ID:  primitive.NewObjectID(),
+		NIF: 1234567890,
+	}
+
+	collection := client.Database("PSprojectTest").Collection("Users")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	_, err := collection.InsertOne(ctx, newUser)
+	if err != nil {
+		t.Fatalf("Failed to insert user: %v", err)
+	}
 
 	deleteData := map[string]interface{}{
-		"phone": 1234567890,
+		"nif": 1234567890,
 	}
 	deleteJSON, _ := json.Marshal(deleteData)
 
-	req := httptest.NewRequest(http.MethodDelete, "/api/users", bytes.NewBuffer(deleteJSON))
+	// Test deleting an existing user
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/mb/users", bytes.NewBuffer(deleteJSON))
 	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status code 200, got %v", w.Code)
+	}
+
+	// Test deleting a non-existent user
+	req = httptest.NewRequest(http.MethodDelete, "/api/v1/mb/users", bytes.NewBuffer(deleteJSON))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("Expected status code 404, got %v", w.Code)
+	}
+}
+
+func TestGetClients(t *testing.T) {
+	router, _ := setupRouter()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/mb/users/clients", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status code 200, got %v", w.Code)
+	}
+}
+
+func TestGetFees(t *testing.T) {
+	router, _ := setupRouter()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/bo/fees", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status code 200, got %v", w.Code)
+	}
+}
+
+func TestGetServicesPerformed(t *testing.T) {
+	router, _ := setupRouter()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/bo/count-services-performed", nil)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
